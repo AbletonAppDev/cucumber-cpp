@@ -128,6 +128,19 @@ void HookRegistrar::execAfterAllHooks() {
     execHooks(afterAllHooks(), NULL);
 }
 
+void HookRegistrar::setStepMatchingHook(StepMatchingHook hook) {
+    stepMatchingHook() = hook;
+}
+
+bool HookRegistrar::execStepMatchingHook(const boost::cmatch& originalMatch) {
+    return stepMatchingHook() == nullptr || stepMatchingHook()(originalMatch);
+}
+
+HookRegistrar::StepMatchingHook& HookRegistrar::stepMatchingHook() {
+    static StepMatchingHook stepMatchingHook = nullptr;
+    return stepMatchingHook;
+}
+
 
 StepCallChain::StepCallChain(
     Scenario *scenario,
