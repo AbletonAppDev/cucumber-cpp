@@ -2,6 +2,7 @@ include(GenerateExportHeader)
 
 set(CUKE_SOURCES
     drivers/GenericDriver.cpp
+    BreakpointSupport.cpp
     ContextManager.cpp
     CukeCommands.cpp
     CukeEngine.cpp

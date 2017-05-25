@@ -1,4 +1,5 @@
 #include <cucumber-cpp/internal/drivers/GTestDriver.hpp>
+#include <cucumber-cpp/internal/step/StepMacros.hpp>
 
 #include <gtest/gtest.h>
 
@@ -33,6 +34,10 @@ void GTestStep::initFlags() {
     ::testing::GTEST_FLAG(throw_on_failure) = true;  // let cucumber-cpp drive
     ::testing::GTEST_FLAG(break_on_failure) = false; // turn off debugger breakpoints
     ::testing::GTEST_FLAG(catch_exceptions) = true;
+}
+
+WHEN("^BREAK!$") {
+    shouldBreakIntoDebuggerInNextStep();
 }
 
 }

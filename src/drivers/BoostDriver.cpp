@@ -123,5 +123,9 @@ void BoostStep::runWithMasterSuite() {
     currentTestBody.clear();
 }
 
+WHEN("^BREAK!$") {
+    shouldBreakIntoDebuggerInNextStep();
+}
+
 }
 }

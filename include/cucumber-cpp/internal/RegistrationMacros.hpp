@@ -26,6 +26,7 @@ class class_name : public parent_class {                                  \
 public:                                                                   \
     void body();                                                          \
 private:                                                                  \
+    void bodyWithBreakpointSupport();                                     \
     static const int cukeRegId;                                           \
 };                                                                        \
 const int class_name ::cukeRegId = registration_fn ;                      \
