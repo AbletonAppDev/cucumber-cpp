@@ -9,13 +9,13 @@
 namespace cucumber {
 namespace internal {
 
-class StepMatchArg {
+class CUCUMBER_CPP_EXPORT StepMatchArg {
 public:
     std::string value;
     int position;
 };
 
-class StepMatch {
+class CUCUMBER_CPP_EXPORT StepMatch {
 public:
     std::string id;
     std::vector<StepMatchArg> args;
@@ -23,7 +23,7 @@ public:
     std::string regexp;
 };
 
-class InvokeException {
+class CUCUMBER_CPP_EXPORT InvokeException {
 private:
     const std::string message;
 
@@ -36,7 +36,7 @@ public:
     virtual ~InvokeException() {}
 };
 
-class InvokeFailureException : public InvokeException {
+class CUCUMBER_CPP_EXPORT InvokeFailureException : public InvokeException {
 private:
     const std::string exceptionType;
 
@@ -47,7 +47,7 @@ public:
     const std::string getExceptionType() const;
 };
 
-class PendingStepException : public InvokeException {
+class CUCUMBER_CPP_EXPORT PendingStepException : public InvokeException {
 public:
     PendingStepException(const std::string & message);
     PendingStepException(const PendingStepException &rhs);
@@ -59,7 +59,7 @@ public:
  * It uses standard types (as much as possible) to be easier to call.
  * Returns standard types if possible.
  */
-class CukeEngine {
+class CUCUMBER_CPP_EXPORT CukeEngine {
 private:
     typedef std::vector<std::string> string_array;
     typedef boost::multi_array<std::string, 2> string_2d_array;

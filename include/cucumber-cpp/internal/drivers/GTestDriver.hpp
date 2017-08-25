@@ -8,7 +8,7 @@
 namespace cucumber {
 namespace internal {
 
-class GTestStep : public BasicStep {
+class CUCUMBER_CPP_EXPORT GTestStep : public BasicStep {
 protected:
     const InvokeResult invokeStepBody();
 

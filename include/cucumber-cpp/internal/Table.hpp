@@ -9,7 +9,7 @@
 namespace cucumber {
 namespace internal {
 
-class Table {
+class CUCUMBER_CPP_EXPORT Table {
 private:
     typedef std::vector<std::string> basic_type;
 public:

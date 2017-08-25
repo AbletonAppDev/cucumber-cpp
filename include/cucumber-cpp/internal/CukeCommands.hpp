@@ -21,7 +21,7 @@ using boost::shared_ptr;
 /**
  * Legacy class to be removed when feature #31 is complete, substituted by CukeEngineImpl.
  */
-class CukeCommands {
+class CUCUMBER_CPP_EXPORT CukeCommands {
 public:
 	CukeCommands();
 	virtual ~CukeCommands();
