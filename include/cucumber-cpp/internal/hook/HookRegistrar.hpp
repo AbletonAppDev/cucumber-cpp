@@ -2,6 +2,7 @@
 #define CUKE_HOOKREGISTRAR_HPP_
 
 #include "Tag.hpp"
+#include "../CukeDll.hpp"
 #include "../Scenario.hpp"
 #include "../step/StepManager.hpp"
 
@@ -14,13 +15,15 @@ using boost::shared_ptr;
 namespace cucumber {
 namespace internal {
 
-class CallableStep {
+class CUKE_API_ CallableStep {
 public:
+    virtual ~CallableStep() = 0;
     virtual void call() = 0;
 };
 
-class Hook {
+class CUKE_API_ Hook {
 public:
+    virtual ~Hook() = 0;
     void setTags(const std::string &csvTagNotation);
     virtual void invokeHook(Scenario *scenario, CallableStep *step);
     virtual void skipHook();
@@ -31,10 +34,10 @@ private:
     shared_ptr<TagExpression> tagExpression;
 };
 
-class BeforeHook : public Hook {
+class CUKE_API_ BeforeHook : public Hook {
 };
 
-class AroundStepHook : public Hook {
+class CUKE_API_ AroundStepHook : public Hook {
 public:
     virtual void invokeHook(Scenario *scenario, CallableStep *step);
     virtual void skipHook();
@@ -42,27 +45,28 @@ protected:
     CallableStep *step;
 };
 
-class AfterStepHook : public Hook {
+class CUKE_API_ AfterStepHook : public Hook {
 };
 
-class AfterHook : public Hook {
+class CUKE_API_ AfterHook : public Hook {
 };
 
-class UnconditionalHook : public Hook {
+class CUKE_API_ UnconditionalHook : public Hook {
 public:
     virtual void invokeHook(Scenario *scenario, CallableStep *step);
 };
 
-class BeforeAllHook : public UnconditionalHook {
+class CUKE_API_ BeforeAllHook : public UnconditionalHook {
 };
 
-class AfterAllHook : public UnconditionalHook {
+class CUKE_API_ AfterAllHook : public UnconditionalHook {
 };
 
-class HookRegistrar {
+class CUKE_API_ HookRegistrar {
 public:
     typedef std::list< boost::shared_ptr<Hook> > hook_list_type;
     typedef std::list< boost::shared_ptr<AroundStepHook> > aroundhook_list_type;
+    typedef bool(*StepMatchingHook)(const boost::cmatch&);
 
     virtual ~HookRegistrar();
 
@@ -84,6 +88,9 @@ public:
     void addAfterAllHook(const boost::shared_ptr<AfterAllHook>& afterAllHook);
     void execAfterAllHooks();
 
+    void setStepMatchingHook(StepMatchingHook hook);
+    bool execStepMatchingHook(const boost::cmatch& originalMatch);
+
 private:
     void execHooks(HookRegistrar::hook_list_type &hookList, Scenario *scenario);
 
@@ -94,10 +101,11 @@ protected:
     hook_list_type& afterStepHooks();
     hook_list_type& afterHooks();
     hook_list_type& afterAllHooks();
+    StepMatchingHook& stepMatchingHook();
 };
 
 
-class StepCallChain {
+class CUKE_API_ StepCallChain {
 public:
     StepCallChain(Scenario *scenario, const boost::shared_ptr<const StepInfo>& stepInfo, const InvokeArgs *pStepArgs, HookRegistrar::aroundhook_list_type &aroundHooks);
     InvokeResult exec();
@@ -114,7 +122,7 @@ private:
     InvokeResult result;
 };
 
-class CallableStepChain : public CallableStep {
+class CUKE_API_ CallableStepChain : public CallableStep {
 public:
     CallableStepChain(StepCallChain *scc);
     void call();

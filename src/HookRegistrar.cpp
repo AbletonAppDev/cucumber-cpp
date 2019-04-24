@@ -5,6 +5,12 @@
 namespace cucumber {
 namespace internal {
 
+CallableStep::~CallableStep() {
+}
+
+Hook::~Hook() {
+}
+
 void Hook::invokeHook(Scenario *scenario, CallableStep *) {
     if (tagsMatch(scenario)) {
         body();
@@ -95,7 +101,6 @@ void HookRegistrar::execAfterHooks(Scenario *scenario) {
     execHooks(afterHooks(), scenario);
 }
 
-
 void HookRegistrar::execHooks(HookRegistrar::hook_list_type &hookList, Scenario *scenario) {
     for (HookRegistrar::hook_list_type::iterator hook = hookList.begin(); hook != hookList.end(); ++hook) {
         (*hook)->invokeHook(scenario, NULL);
@@ -126,6 +131,19 @@ void HookRegistrar::addAfterAllHook(const boost::shared_ptr<AfterAllHook>& after
 
 void HookRegistrar::execAfterAllHooks() {
     execHooks(afterAllHooks(), NULL);
+}
+
+void HookRegistrar::setStepMatchingHook(StepMatchingHook hook) {
+    stepMatchingHook() = hook;
+}
+
+bool HookRegistrar::execStepMatchingHook(const boost::cmatch& originalMatch) {
+    return stepMatchingHook() == nullptr || stepMatchingHook()(originalMatch);
+}
+
+HookRegistrar::StepMatchingHook& HookRegistrar::stepMatchingHook() {
+    static StepMatchingHook stepMatchingHook = nullptr;
+    return stepMatchingHook;
 }
 
 
