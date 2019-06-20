@@ -36,7 +36,8 @@ std::ptrdiff_t utf8CodepointOffset(const std::string& expression, size_t codeUni
     if (codeUnitPosition > expression.size()) {
         throw std::range_error("codeUnitPosition out of range");
     }
-    return count_if(expression.begin(), expression.begin() + codeUnitPosition, &isUtf8CodeUnitStartOfCodepoint);
+    return count_if(
+        expression.begin(), expression.begin() + codeUnitPosition, &isUtf8CodeUnitStartOfCodepoint);
 }
 }
 
@@ -53,7 +54,8 @@ FindRegexMatch::FindRegexMatch(const boost::regex &regexImpl, const std::string 
         for (; i != matchResults.end(); ++i) {
             if (i->matched) {
                 std::ptrdiff_t codeUnitPosition = i->first - expression.begin();
-                RegexSubmatch s = {*i, utf8CodepointOffset(expression, static_cast<size_t>(codeUnitPosition))};
+                RegexSubmatch s
+                    = {*i, utf8CodepointOffset(expression, static_cast<size_t>(codeUnitPosition))};
                 submatches.push_back(s);
             } else {
                 submatches.push_back(RegexSubmatch());
