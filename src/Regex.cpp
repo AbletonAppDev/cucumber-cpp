@@ -2,6 +2,8 @@
 #include <cucumber-cpp/internal/hook/HookRegistrar.hpp>
 #include <boost/make_shared.hpp>
 
+#include <stdexcept>
+
 namespace cucumber {
 namespace internal {
 
@@ -25,6 +27,20 @@ boost::shared_ptr<RegexMatch> Regex::find(const std::string &expression) const {
     return boost::make_shared<FindRegexMatch>(regexImpl, expression);
 }
 
+namespace {
+bool isUtf8CodeUnitStartOfCodepoint(unsigned int i) {
+    return (i & 0xc0) != 0x80;
+}
+
+std::ptrdiff_t utf8CodepointOffset(const std::string& expression, size_t codeUnitPosition) {
+    if (codeUnitPosition > expression.size()) {
+        throw std::range_error("codeUnitPosition out of range");
+    }
+    return count_if(
+        expression.begin(), expression.begin() + codeUnitPosition, &isUtf8CodeUnitStartOfCodepoint);
+}
+}
+
 FindRegexMatch::FindRegexMatch(const boost::regex &regexImpl, const std::string &expression) {
     boost::smatch matchResults;
     regexMatched = boost::regex_search(
@@ -37,7 +53,9 @@ FindRegexMatch::FindRegexMatch(const boost::regex &regexImpl, const std::string 
             ++i;
         for (; i != matchResults.end(); ++i) {
             if (i->matched) {
-                RegexSubmatch s = {*i, i->first - expression.begin()};
+                std::ptrdiff_t codeUnitPosition = i->first - expression.begin();
+                RegexSubmatch s
+                    = {*i, utf8CodepointOffset(expression, static_cast<size_t>(codeUnitPosition))};
                 submatches.push_back(s);
             } else {
                 submatches.push_back(RegexSubmatch());

@@ -24,6 +24,7 @@ public:
      * @brief addColumn
      * @param column
      *
+     * @throws std::range_error
      * @throws std::runtime_error
      */
     void addColumn(const std::string column);
