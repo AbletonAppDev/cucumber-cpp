@@ -32,7 +32,7 @@ bool AndTagExpression::matches(const tag_list &tags) const {
 
 
 Regex & OrTagExpression::csvTagNotationRegex() {
-    static Regex r("\\s*@(\\w+)\\s*(?:,|$)");
+    static Regex r("\\s*@([A-Za-z0-9_-]+)\\s*(?:,|$)");
     return r;
 }
 
