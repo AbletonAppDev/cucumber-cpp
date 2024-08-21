@@ -25,6 +25,14 @@ namespace internal {
  */
 
 
+SuccessResponse::SuccessResponse(const size_t & duration_ms) :
+    duration_ms(duration_ms) {
+}
+
+const std::string SuccessResponse::getDurationMs() const {
+    return std::to_string(duration_ms);
+}
+
 void SuccessResponse::accept(WireResponseVisitor& visitor) const {
     visitor.visit(*this);
 }
@@ -235,8 +243,11 @@ namespace {
             return write_string(v, ::raw_utf8);
         }
 
-        void visit(const SuccessResponse& /*response*/) {
-            success();
+        void visit(const SuccessResponse& response) {
+            mObject detailObject;
+            detailObject["duration_ms"] = response.getDurationMs();
+            mValue detail(detailObject);
+            success(&detail);
         }
 
         void visit(const FailureResponse& response) {
