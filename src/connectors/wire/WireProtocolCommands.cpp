@@ -1,6 +1,8 @@
 #include <cucumber-cpp/internal/connectors/wire/WireProtocolCommands.hpp>
 #include <boost/make_shared.hpp>
 
+#include <chrono>
+
 namespace cucumber {
 namespace internal {
 
@@ -14,8 +16,12 @@ BeginScenarioCommand::BeginScenarioCommand(const CukeEngine::tags_type& tags) :
 }
 
 boost::shared_ptr<WireResponse> BeginScenarioCommand::run(CukeEngine& engine) const {
+    const auto Start = std::chrono::steady_clock::now();
     engine.beginScenario(tags);
-    return boost::make_shared<SuccessResponse>();
+    const auto DurationMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                std::chrono::steady_clock::now() - Start)
+                                .count();
+    return boost::make_shared<SuccessResponse>(DurationMs);
 }
 
 
@@ -24,8 +30,12 @@ EndScenarioCommand::EndScenarioCommand(const CukeEngine::tags_type& tags) :
 }
 
 boost::shared_ptr<WireResponse> EndScenarioCommand::run(CukeEngine& engine) const {
+    const auto Start = std::chrono::steady_clock::now();
     engine.endScenario(tags);
-    return boost::make_shared<SuccessResponse>();
+    const auto DurationMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                std::chrono::steady_clock::now() - Start)
+                                .count();
+    return boost::make_shared<SuccessResponse>(DurationMs);
 }
 
 
@@ -49,8 +59,12 @@ InvokeCommand::InvokeCommand(const std::string & stepId,
 
 boost::shared_ptr<WireResponse> InvokeCommand::run(CukeEngine& engine) const {
     try {
+        const auto Start = std::chrono::steady_clock::now();
         engine.invokeStep(stepId, args, tableArg);
-        return boost::make_shared<SuccessResponse>();
+        const auto DurationMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    std::chrono::steady_clock::now() - Start)
+                                    .count();
+        return boost::make_shared<SuccessResponse>(DurationMs);
     } catch (const InvokeFailureException& e) {
         return boost::make_shared<FailureResponse>(e.getMessage(), e.getExceptionType());
     } catch (const PendingStepException& e) {
