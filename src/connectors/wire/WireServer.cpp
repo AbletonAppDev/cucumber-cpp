@@ -40,7 +40,7 @@ template <typename Protocol>
 void SocketServer::doAcceptOnce(basic_socket_acceptor<Protocol>& acceptor) {
 #endif
     typename Protocol::iostream stream;
-    acceptor.accept(*stream.rdbuf());
+    acceptor.accept(stream.socket());
     processStream(stream);
 }
 
