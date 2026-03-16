@@ -4,7 +4,6 @@
 #include "StepManagerTestDouble.hpp"
 #include <cucumber-cpp/internal/CukeCommands.hpp>
 
-#include <cstring>
 #include <iostream>
 #include <string>
 

@@ -7,8 +7,7 @@ namespace cucumber {
 namespace internal {
 
 Regex::Regex(std::string regularExpression) :
-    regexImpl(regularExpression),
-    regexString(regularExpression) {
+    regexImpl(regularExpression.c_str()) {
 }
 
 bool RegexMatch::matches() {
@@ -20,7 +19,7 @@ const RegexMatch::submatches_type& RegexMatch::getSubmatches() {
 }
 
 std::string Regex::str() const {
-    return regexString;
+    return regexImpl.str();
 }
 
 std::shared_ptr<RegexMatch> Regex::find(const std::string& expression) const {
@@ -39,12 +38,13 @@ std::ptrdiff_t utf8CodepointOffset(
 }
 } // namespace
 
-FindRegexMatch::FindRegexMatch(const std::regex& regexImpl, const std::string& expression) {
-    std::smatch matchResults;
-    regexMatched = std::regex_search(expression, matchResults, regexImpl)
+FindRegexMatch::FindRegexMatch(const boost::regex& regexImpl, const std::string& expression) {
+    boost::smatch matchResults;
+    regexMatched = boost::regex_search(
+        expression, matchResults, regexImpl, boost::regex_constants::match_extra)
                    && HookRegistrar::execStepMatchingHook(matchResults);
     if (regexMatched) {
-        std::smatch::const_iterator i = matchResults.begin();
+        boost::smatch::const_iterator i = matchResults.begin();
         if (i != matchResults.end())
             // Skip capture group 0 which is the whole match, not a user marked sub-expression
             ++i;
@@ -63,11 +63,9 @@ std::shared_ptr<RegexMatch> Regex::findAll(const std::string& expression) const 
     return std::make_shared<FindAllRegexMatch>(regexImpl, expression);
 }
 
-FindAllRegexMatch::FindAllRegexMatch(const std::regex& regexImpl, const std::string& expression) {
-    std::sregex_token_iterator i(
-        expression.begin(), expression.end(), regexImpl, 1, std::regex_constants::match_continuous
-    );
-    const std::sregex_token_iterator end;
+FindAllRegexMatch::FindAllRegexMatch(const boost::regex &regexImpl, const std::string &expression) {
+    boost::sregex_token_iterator i(expression.begin(), expression.end(), regexImpl, 1, boost::regex_constants::match_continuous);
+    const boost::sregex_token_iterator end;
     for (; i != end; ++i) {
         RegexSubmatch s = {*i, -1};
         submatches.push_back(s);
