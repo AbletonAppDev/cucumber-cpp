@@ -74,6 +74,8 @@ void CukeEngineImpl::invokeStep(const std::string & id, const invoke_args_type &
     InvokeResult commandResult;
     try {
         commandResult = cukeCommands.invoke(convertId(id), &commandArgs);
+    } catch (const std::runtime_error& e) {
+        throw InvokeFailureException(e.what(), "");
     } catch (...) {
         throw InvokeException("Uncatched exception");
     }
