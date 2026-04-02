@@ -1,4 +1,5 @@
 #include <cucumber-cpp/internal/connectors/wire/WireProtocolCommands.hpp>
+#include <cucumber-cpp/internal/CukeEngine.hpp>
 #include <boost/make_shared.hpp>
 
 namespace cucumber {
@@ -55,6 +56,8 @@ boost::shared_ptr<WireResponse> InvokeCommand::run(CukeEngine& engine) const {
         return boost::make_shared<FailureResponse>(e.getMessage(), e.getExceptionType());
     } catch (const PendingStepException& e) {
         return boost::make_shared<PendingResponse>(e.getMessage());
+    } catch (const InvokeException& e) {
+        return boost::make_shared<FailureResponse>(e.getMessage(), "InvokeException");
     } catch (...) {
         return boost::make_shared<FailureResponse>();
     }
