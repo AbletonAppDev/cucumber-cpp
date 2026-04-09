@@ -2,26 +2,19 @@
 
 #include <gmock/gmock.h>
 
-#include <boost/filesystem/operations.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/thread.hpp>
-#include <boost/timer.hpp>
+#include <filesystem>
+#include <memory>
+#include <random>
+#include <thread>
+#include <chrono>
 
 #include <stdlib.h>
 #include <sstream>
 
 using namespace cucumber::internal;
-using namespace boost::posix_time;
-using namespace boost::asio::ip;
-#if defined(BOOST_ASIO_HAS_LOCAL_SOCKETS)
-using namespace boost::asio::local;
-#endif
 using namespace testing;
-using boost::bind;
-using boost::thread;
-namespace fs = boost::filesystem;
 
-static const time_duration THREAD_TEST_TIMEOUT = milliseconds(4000);
+static const auto THREAD_TEST_TIMEOUT = std::chrono::milliseconds(4000);
 
 MATCHER(IsConnected, std::string(negation ? "is not" : "is") + " connected") {
     return arg.good();
@@ -32,48 +25,47 @@ MATCHER(HasTerminated, "") {
 }
 
 MATCHER(EventuallyTerminates, "") {
-    return arg->timed_join(THREAD_TEST_TIMEOUT);
+    const std::future_status status = arg.wait_for(THREAD_TEST_TIMEOUT);
+    return status == std::future_status::ready;
 }
 
 MATCHER_P(EventuallyReceives, value, "") {
-    std::basic_iostream<char> *stream = const_cast<std::basic_iostream<char> *>(
-            static_cast<const std::basic_iostream<char> *>(&arg));
+    std::basic_iostream<char>* stream
+        = const_cast<std::basic_iostream<char>*>(static_cast<const std::basic_iostream<char>*>(&arg)
+        );
     std::string output;
-// FIXME It should not block
+    // FIXME It should not block
     (*stream) >> output;
-//    boost::timer timer;
-//    double timeout = THREAD_TEST_TIMEOUT.total_milliseconds() / 1000.0;
-//    while (timer.elapsed() < timeout) {
-//        if (stream->rdbuf()->available() > 0) { // it is zero even if it doesn't block!
-//            (*stream) >> output;
-//            break;
-//        }
-//        boost::this_thread::yield();
-//    }
+    //    boost::timer timer;
+    //    double timeout = THREAD_TEST_TIMEOUT.total_milliseconds() / 1000.0;
+    //    while (timer.elapsed() < timeout) {
+    //        if (stream->rdbuf()->available() > 0) { // it is zero even if it doesn't block!
+    //            (*stream) >> output;
+    //            break;
+    //        }
+    //        boost::this_thread::yield();
+    //    }
     return (output == value);
 }
 
 class MockProtocolHandler : public ProtocolHandler {
 public:
-    MOCK_CONST_METHOD1(handle, std::string(const std::string& request));
+    MOCK_METHOD(std::string, handle, (const std::string& request), (const, override));
 };
 
 class SocketServerTest : public Test {
 
 protected:
     StrictMock<MockProtocolHandler> protocolHandler;
-    boost::scoped_ptr<thread> serverThread;
+    std::future<void> serverThread{};
 
-    virtual void SetUp() {
+    void SetUp() override {
         SocketServer* server = createListeningServer();
-        serverThread.reset(new thread(&SocketServer::acceptOnce, server));
+        serverThread = std::async(std::launch::async, &SocketServer::acceptOnce, server);
     }
 
-    virtual void TearDown() {
-        if (serverThread) {
-            serverThread->timed_join(THREAD_TEST_TIMEOUT);
-            serverThread.reset();
-        }
+    void TearDown() override {
+        serverThread.wait_for(THREAD_TEST_TIMEOUT);
         destroyListeningServer();
     }
 
@@ -83,22 +75,22 @@ protected:
 
 class TCPSocketServerTest : public SocketServerTest {
 protected:
-    boost::scoped_ptr<TCPSocketServer> server;
+    std::unique_ptr<TCPSocketServer> server;
 
-    virtual SocketServer* createListeningServer() {
+    SocketServer* createListeningServer() override {
         server.reset(new TCPSocketServer(&protocolHandler));
         server->listen(0);
         return server.get();
     }
 
-    virtual void destroyListeningServer() {
+    void destroyListeningServer() override {
         server.reset();
     }
 };
 
 TEST_F(TCPSocketServerTest, exitsOnFirstConnectionClosed) {
     // given
-    tcp::iostream client(server->listenEndpoint());
+    asio::ip::tcp::iostream client(server->listenEndpoint());
     ASSERT_THAT(client, IsConnected());
     ASSERT_THAT(server->listenEndpoint().address().to_string(), std::string("0.0.0.0"));
 
@@ -111,13 +103,13 @@ TEST_F(TCPSocketServerTest, exitsOnFirstConnectionClosed) {
 
 TEST_F(TCPSocketServerTest, moreThanOneClientCanConnect) {
     // given
-    tcp::iostream client1(server->listenEndpoint());
+    asio::ip::tcp::iostream client1(server->listenEndpoint());
     ASSERT_THAT(client1, IsConnected());
 
     // when
-    tcp::iostream client2(server->listenEndpoint());
+    asio::ip::tcp::iostream client2(server->listenEndpoint());
 
-    //then
+    // then
     ASSERT_THAT(client2, IsConnected());
 }
 
@@ -130,7 +122,7 @@ TEST_F(TCPSocketServerTest, receiveAndSendsSingleLineMassages) {
     }
 
     // given
-    tcp::iostream client(server->listenEndpoint());
+    asio::ip::tcp::iostream client(server->listenEndpoint());
     ASSERT_THAT(client, IsConnected());
 
     // when
@@ -145,22 +137,22 @@ TEST_F(TCPSocketServerTest, receiveAndSendsSingleLineMassages) {
 
 class TCPSocketServerLocalhostTest : public SocketServerTest {
 protected:
-  boost::scoped_ptr<TCPSocketServer> server;
+    std::unique_ptr<TCPSocketServer> server;
 
-  virtual SocketServer* createListeningServer() {
-      server.reset(new TCPSocketServer(&protocolHandler));
-      server->listen(tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 0));
-      return server.get();
-  }
+    SocketServer* createListeningServer() override {
+        server.reset(new TCPSocketServer(&protocolHandler));
+        server->listen(asio::ip::tcp::endpoint(asio::ip::make_address("127.0.0.1"), 0));
+        return server.get();
+    }
 
-  virtual void destroyListeningServer() {
-      server.reset();
-  }
+    void destroyListeningServer() override {
+        server.reset();
+    }
 };
 
 TEST_F(TCPSocketServerLocalhostTest, listensOnLocalhost) {
     // given
-    tcp::iostream client(server->listenEndpoint());
+    asio::ip::tcp::iostream client(server->listenEndpoint());
     ASSERT_THAT(client, IsConnected());
     ASSERT_THAT(server->listenEndpoint().address().to_string(), std::string("127.0.0.1"));
 
@@ -171,20 +163,32 @@ TEST_F(TCPSocketServerLocalhostTest, listensOnLocalhost) {
     EXPECT_THAT(serverThread, EventuallyTerminates());
 }
 
-#if defined(BOOST_ASIO_HAS_LOCAL_SOCKETS)
+#if defined(ASIO_HAS_LOCAL_SOCKETS)
 class UnixSocketServerTest : public SocketServerTest {
 protected:
-    boost::scoped_ptr<UnixSocketServer> server;
+    std::unique_ptr<UnixSocketServer> server;
 
-    virtual SocketServer* createListeningServer() {
-        fs::path socket = fs::temp_directory_path() / fs::unique_path();
+    SocketServer* createListeningServer() override {
+        const std::string filename = std::filesystem::temp_directory_path() / randomString();
         server.reset(new UnixSocketServer(&protocolHandler));
-        server->listen(socket.string());
+        server->listen(filename);
         return server.get();
     }
 
-    virtual void destroyListeningServer() {
+    void destroyListeningServer() override {
         server.reset();
+    }
+
+private:
+    std::random_device rd{};
+    std::mt19937 gen{rd()};
+    std::uniform_int_distribution<> distrib{0, 15};
+
+    std::string randomString() {
+        std::stringstream out{};
+        for (std::size_t i = 0; i < 16; i++)
+            out << std::hex << distrib(gen);
+        return out.str();
     }
 };
 
@@ -196,14 +200,14 @@ protected:
  * created at startup and removed on shutdown.
  */
 TEST_F(UnixSocketServerTest, fullLifecycle) {
-    stream_protocol::endpoint socketName = server->listenEndpoint();
+    asio::local::stream_protocol::endpoint socketName = server->listenEndpoint();
     EXPECT_CALL(protocolHandler, handle("X")).WillRepeatedly(Return("Y"));
 
     // socket created at startup
-    ASSERT_TRUE(fs::exists(socketName.path()));
+    ASSERT_TRUE(std::filesystem::exists(socketName.path()));
 
     // traffic flows
-    stream_protocol::iostream client(socketName);
+    asio::local::stream_protocol::iostream client(socketName);
     client << "X" << std::endl << std::flush;
     EXPECT_THAT(client, EventuallyReceives("Y"));
 
@@ -213,6 +217,6 @@ TEST_F(UnixSocketServerTest, fullLifecycle) {
 
     // socket removed by destructor
     TearDown();
-    EXPECT_FALSE(fs::exists(socketName.path()));
+    EXPECT_FALSE(std::filesystem::exists(socketName.path()));
 }
 #endif

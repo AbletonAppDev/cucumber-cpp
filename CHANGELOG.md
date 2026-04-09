@@ -1,10 +1,68 @@
 Please see [CONTRIBUTING.md](https://github.com/cucumber/cucumber/blob/main/CONTRIBUTING.md) on how to contribute to Cucumber.
 
-## In Git
+## [0.8.0](https://github.com/cucumber/cucumber-cpp/compare/v0.7.0...v0.8.0) (07 January 2026)
+
+### Added
+
+* Qt6 support ([#283](https://github.com/cucumber/cucumber-cpp/pull/283) Urs Fässler)
+* Windows CI support ([#288](https://github.com/cucumber/cucumber-cpp/pull/288) Christoph Wellm)
+* Test compilation with different compilers and language standards on Linux ([#282](https://github.com/cucumber/cucumber-cpp/pull/282) Urs Fässler)
+* Test to fail the build for deprecated asio features ([72e5fa9](https://github.com/cucumber/cucumber-cpp/commit/72e5fa9ff643d90a513bff57f7322606ecaf4270) Shirzart Enwer)
+
+### Changed
+
+* Only enable minimal set of CMake options by default ([#281](https://github.com/cucumber/cucumber-cpp/pull/281) Urs Fässler)
+* Use CMake option for strict checks ([#310](https://github.com/cucumber/cucumber-cpp/pull/310) Joerg Kreuzberger)
+* Only treat compilation warnings as error in CI ([#301](https://github.com/cucumber/cucumber-cpp/pull/301) Joerg Kreuzberger)
+* Remove support for Qt4 ([#283](https://github.com/cucumber/cucumber-cpp/pull/283) Urs Fässler)
+* CalcQt example improvements ([#283](https://github.com/cucumber/cucumber-cpp/pull/283) Urs Fässler)
+* Update README with explanation how it works ([#291](https://github.com/cucumber/cucumber-cpp/pull/291) erichstuder)
+* Adjust links and information regarding where to get help ([#306](https://github.com/cucumber/cucumber-cpp/pull/306) Joerg Kreuzberger)
+* Use https for all links in README ([0911bd2](https://github.com/cucumber/cucumber-cpp/commit/0911bd265bf0b484d5661f4163074714868cc77b) Joerg Kreuzberger)
+
+### Fixed
+
+* Support asio 1.33 ([#308](https://github.com/cucumber/cucumber-cpp/pull/308) Shirzart Enwer)
+* Boost download source fixed ([#309](https://github.com/cucumber/cucumber-cpp/pull/309) Shirzart Enwer)
+* Windows QtTestDriver ([#305](https://github.com/cucumber/cucumber-cpp/pull/305) Joerg Kreuzberger)
+* Flaky QtTestDriver test ([#296](https://github.com/cucumber/cucumber-cpp/pull/296) Joerg Kreuzberger)
+* Links to website and discussion group in README ([#299](https://github.com/cucumber/cucumber-cpp/pull/299) Joerg Kreuzberger)
+* Compile error with C++20 ([ea089a6](https://github.com/cucumber/cucumber-cpp/commit/ea089a6369641445dc52099298779cef6affdb8f) Urs Fässler)
+
+## [0.7.0](https://github.com/cucumber/cucumber-cpp/compare/v0.6...v0.7.0) (30 December 2023)
+
+### Added
+
+* add version info to cucumber-cpp-main ([8a0d16b8](https://github.com/cucumber/cucumber-cpp/pull/275/commits/8a0d16b8f59dd1c9d75045aa016d9ce235257311) Urs Fässler)
+* Remove dependency to Boost ([#275](https://github.com/cucumber/cucumber-cpp/pull/275) Urs Fässler)
+* List headers in cmake ([#274](https://github.com/cucumber/cucumber-cpp/pull/274) Urs Fässler)
+* Check code format on PR and main branch ([#268](https://github.com/cucumber/cucumber-cpp/pull/268) Urs Fässler)
+
+### Changed
+
+* use semantic versioning ([#280](https://github.com/cucumber/cucumber-cpp/pull/280) Urs Fässler)
+* No googletest auto-download ([#279](https://github.com/cucumber/cucumber-cpp/pull/279) Urs Fässler)
+* Remove dependency to Boost ([#275](https://github.com/cucumber/cucumber-cpp/pull/275) Urs Fässler)
+  * use asio without boost  ([d131ae39](https://github.com/cucumber/cucumber-cpp/pull/275/commits/d131ae3951b9aeb03dd787bf6fee4a06a81c1f04))
+  * use TCLAP to parse program options ([b688cf41](https://github.com/cucumber/cucumber-cpp/pull/275/commits/b688cf41647803daa8a7656595b0d1bcbabf2310))
+* use nlohmann/json library ([#273](https://github.com/cucumber/cucumber-cpp/pull/273) Urs Fässler)
+* remove boost::multi_array ([#269](https://github.com/cucumber/cucumber-cpp/pull/269) Urs Fässler)
+* Modernize overloading ([#267](https://github.com/cucumber/cucumber-cpp/pull/267) Urs Fässler)
+* refactoring: use stl regex instead of boost::regex ([#266](https://github.com/cucumber/cucumber-cpp/pull/266) Urs Fässler)
+
+### Fixed
+
+* mention CI scripts for details about dependency installation ([#278](https://github.com/cucumber/cucumber-cpp/pull/278) Urs Fässler)
+* remove broken E2E tests ([#272](https://github.com/cucumber/cucumber-cpp/pull/272) Urs Fässler)
+* remove broken AppVeyor build ([#271](https://github.com/cucumber/cucumber-cpp/pull/271) Urs Fässler)
+
+## [0.6](https://github.com/cucumber/cucumber-cpp/compare/v0.5...v0.6) (17 December 2023)
 
 ### Added
 
 ### Changed
+
+* Using C++ standard library where possible instead of boost ([#264](https://github.com/cucumber/cucumber-cpp/pull/264) Urs Fässler)
 
 ### Fixed
 
@@ -15,6 +73,13 @@ Please see [CONTRIBUTING.md](https://github.com/cucumber/cucumber/blob/main/CONT
 * Fix compilation with Boost 1.70.0 ([#225](https://github.com/cucumber/cucumber-cpp/pull/225) Krystian Młynarczyk)
 * Support step definitions with multi-byte characters ([#224](https://github.com/cucumber/cucumber-cpp/pull/224) Spencer Rudnick)
 * Supress warning about deprecated QSignalMapper ([#228](https://github.com/cucumber/cucumber-cpp/pull/228) Lukas Woodtli)
+* Remove CACHE FORCE arguments from CMAKE_CXX_FLAG on colored terminal output ([#232](https://github.com/cucumber/cucumber-cpp/pull/232)  Alex Cani)
+* Enable compiling with clang's -Wsuggest-override ([#244](https://github.com/cucumber/cucumber-cpp/pull/244) Tobias Hahn)
+* Add posibility to build with sanitizers enabled ([#247](https://github.com/cucumber/cucumber-cpp/pull/247) Lukas Woodtli)
+* Add support for latest GoogleTest and Boost ([#249](https://github.com/cucumber/cucumber-cpp/pull/249) Canmor Lam)
+* add file extensions to adhere to policy CMP0115 ([#250](https://github.com/cucumber/cucumber-cpp/pull/250) Urs Fässler)
+* Support latest Qt and test on Ubuntu 22.04 ([#253](https://github.com/cucumber/cucumber-cpp/pull/253) Urs Fässler)
+* Update table.feature ([#258](https://github.com/cucumber/cucumber-cpp/pull/258) mbed101)
 
 ## [0.5](https://github.com/cucumber/cucumber-cpp/compare/v0.4...v0.5) (2 July 2018)
 

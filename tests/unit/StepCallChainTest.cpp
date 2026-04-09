@@ -6,37 +6,40 @@ using namespace cucumber::internal;
 
 class FakeStepInfo : public StepInfo {
 public:
-    FakeStepInfo(std::stringstream *markersPtr, const InvokeResult &result) :
+    FakeStepInfo(std::stringstream* markersPtr, const InvokeResult& result) :
         StepInfo("FAKE", ""),
         latestArgsPtr(0),
         markersPtr(markersPtr),
         result(result) {
     }
 
-    InvokeResult invokeStep(const InvokeArgs *pArgs) const {
+    InvokeResult invokeStep(const InvokeArgs* pArgs) const override {
         latestArgsPtr = pArgs;
         (*markersPtr) << "S";
         return result;
     }
 
-    const InvokeArgs *getLatestArgsPassed() const {
+    const InvokeArgs* getLatestArgsPassed() const {
         return latestArgsPtr;
     }
 
 private:
-    mutable const InvokeArgs *latestArgsPtr;
-    std::stringstream *markersPtr;
+    mutable const InvokeArgs* latestArgsPtr;
+    std::stringstream* markersPtr;
     const InvokeResult result;
 };
 
 class MarkingAroundStepHook : public AroundStepHook {
 public:
-    MarkingAroundStepHook(std::string id, std::stringstream *markersPtr) :
-        id(id), markersPtr(markersPtr) {};
+    MarkingAroundStepHook(std::string id, std::stringstream* markersPtr) :
+        id(id),
+        markersPtr(markersPtr){};
 
-    MarkingAroundStepHook() : id(""), markersPtr(0) {};
+    MarkingAroundStepHook() :
+        id(""),
+        markersPtr(0){};
 
-    void body() {
+    void body() override {
         if (markersPtr) {
             (*markersPtr) << "B" << id;
         }
@@ -53,15 +56,16 @@ protected:
 
 private:
     std::string id;
-    std::stringstream *markersPtr;
+    std::stringstream* markersPtr;
 };
 
 class BlockingAroundStepHook : public MarkingAroundStepHook {
 public:
-    BlockingAroundStepHook(std::string id, std::stringstream *markersPtr) :
-        MarkingAroundStepHook(id, markersPtr) {};
+    BlockingAroundStepHook(std::string id, std::stringstream* markersPtr) :
+        MarkingAroundStepHook(id, markersPtr){};
+
 protected:
-    virtual void doCall() {
+    void doCall() override {
     }
 };
 
@@ -72,7 +76,7 @@ protected:
     HookRegistrar::aroundhook_list_type aroundHooks;
     std::stringstream markers;
 
-    InvokeResult execStep(const InvokeResult &result) {
+    InvokeResult execStep(const InvokeResult& result) {
         const FakeStepInfo step(&markers, result);
         StepCallChain scc(0, &step, &NO_INVOKE_ARGS, aroundHooks);
         return scc.exec();
@@ -94,7 +98,7 @@ TEST_F(StepCallChainTest, failsIfNoStep) {
 }
 
 TEST_F(StepCallChainTest, stepExecutionReturnsTheExpectedResult) {
-    boost::shared_ptr<MarkingAroundStepHook> hook(boost::make_shared<MarkingAroundStepHook>());
+    std::shared_ptr<MarkingAroundStepHook> hook(std::make_shared<MarkingAroundStepHook>());
 
     execStepAndCheckSuccess();
 
@@ -109,11 +113,11 @@ TEST_F(StepCallChainTest, stepExecutionReturnsTheExpectedResult) {
 }
 
 TEST_F(StepCallChainTest, aroundHooksAreInvokedInTheCorrectOrder) {
-    boost::shared_ptr<MarkingAroundStepHook>
-        hook1(boost::make_shared<MarkingAroundStepHook>("1", &markers))
-      , hook2(boost::make_shared<MarkingAroundStepHook>("2", &markers))
-      , hook3(boost::make_shared<MarkingAroundStepHook>("3", &markers))
-      ;
+    std::shared_ptr<MarkingAroundStepHook> hook1(
+        std::make_shared<MarkingAroundStepHook>("1", &markers)
+    ),
+        hook2(std::make_shared<MarkingAroundStepHook>("2", &markers)),
+        hook3(std::make_shared<MarkingAroundStepHook>("3", &markers));
 
     aroundHooks.push_back(hook1);
     aroundHooks.push_back(hook2);
@@ -134,11 +138,11 @@ TEST_F(StepCallChainTest, argsArePassedToTheStep) {
 }
 
 TEST_F(StepCallChainTest, aroundHooksCanStopTheCallChain) {
-    boost::shared_ptr<MarkingAroundStepHook>
-        hook1(boost::make_shared<MarkingAroundStepHook >("1", &markers))
-      , hook2(boost::make_shared<BlockingAroundStepHook>("2", &markers))
-      , hook3(boost::make_shared<MarkingAroundStepHook >("3", &markers))
-      ;
+    std::shared_ptr<MarkingAroundStepHook> hook1(
+        std::make_shared<MarkingAroundStepHook>("1", &markers)
+    ),
+        hook2(std::make_shared<BlockingAroundStepHook>("2", &markers)),
+        hook3(std::make_shared<MarkingAroundStepHook>("3", &markers));
 
     aroundHooks.push_back(hook1);
     aroundHooks.push_back(hook2);

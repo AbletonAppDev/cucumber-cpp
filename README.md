@@ -1,46 +1,37 @@
 # Cucumber-CPP
 
-[![Join the chat at https://gitter.im/cucumber/cucumber-cpp](https://badges.gitter.im/cucumber/cucumber-cpp.svg)](https://gitter.im/cucumber/cucumber-cpp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Linux and OSX build status](https://travis-ci.org/cucumber/cucumber-cpp.svg)](https://travis-ci.org/cucumber/cucumber-cpp)
-[![Windows build status](https://ci.appveyor.com/api/projects/status/5jeap3a4si9w8kka?svg=true)](https://ci.appveyor.com/project/paoloambrosio/cucumber-cpp-qqrt7)
-[![Coverage Status](https://coveralls.io/repos/github/cucumber/cucumber-cpp/badge.svg)](https://coveralls.io/github/cucumber/cucumber-cpp)
+## Overview
 
 Cucumber-Cpp allows Cucumber to support step definitions written in C++.
 
-* [Cucumber-Cpp Website](http://github.com/cucumber/cucumber-cpp)
+* [Cucumber-Cpp Website](https://github.com/cucumber/cucumber-cpp)
 * [Cucumber-Cpp Documentation](https://github.com/cucumber/cucumber-cpp/wiki/)
-* [Cucumber Website](http://cukes.info/)
-* [Cucumber Discussion Group](http://groups.google.com/group/cukes)
+* [Cucumber Website](https://cucumber.io/)
+* [Get in touch](https://cucumber.io/docs/community/get-in-touch/)
 
-If you need to ask a question, don't open a ticket on GitHub! Please post
-your question on the Cucumber discussion group instead, prefixing the title
-with [CPP].
+If you need to ask a question, post on the [Cucumber discussion group](https://github.com/orgs/cucumber/discussions).
 
-If you want to contribute code to the project, guidelines are in the
-[`CONTRIBUTING.md` file](https://github.com/cucumber/cucumber-cpp/blob/main/CONTRIBUTING.md).
+If you want to contribute code to the project, guidelines are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Dependencies
 
 It relies on a few executables:
 
-* [cmake](https://cmake.org/download/) 3.1 or later.
+* [cmake](https://cmake.org/download/) 3.16 or later.
   Required to setup environment and build software
 
 It relies on a few libraries:
 
-* [Boost](http://www.boost.org/) 1.46 or later (1.51+ on Windows).
-  Required libraries: *thread*, *system*, *regex*, *date_time* and *program_options*.
-  Optional library for Boost Test driver: *test*.
-* [GTest](http://code.google.com/p/googletest/) 1.6 or later.
-  Optional for the GTest driver. By default downloaded and built by CMake.
-* [GMock](http://code.google.com/p/googlemock/) 1.6 or later.
-  Optional for the internal test suite. By default downloaded and built by CMake.
-* [Qt 4 or 5](http://qt-project.org/). Optional for the CalcQt example and QtTest driver (only Qt 5).
+* [Asio](https://think-async.com/Asio/) 1.18.1 or later.
+* [Boost.Test](https://www.boost.org/) 1.70. Optional for the Boost Test driver.
+* [GTest](https://github.com/google/googletest) 1.11.0 or later. Optional for the GTest driver.
+* [GMock](https://github.com/google/googletest) 1.11.0 or later. Optional for the internal test suite.
+* [nlohmann-json](https://github.com/nlohmann/json) 3.10.5 or later.
+* [Qt6 or Qt5](https://qt-project.org/). Optional for the CalcQt example and QtTest driver.
+* [TCLAP](https://tclap.sourceforge.net/) 1.2.5 or later.
 
-This header-only library is included in the source code:
-
-* [JSON Spirit](http://www.codeproject.com/KB/recipes/JSON_Spirit.aspx)
-
-It might work with earlier versions of the libraries, but it was not
-tested with them.
+It might work with earlier versions of the libraries, but it was not tested with them.
+See the [CI scripts](.github/workflows/run-all.yml) for details about dependency installation.
 
 Cucumber-Cpp uses the wire protocol at the moment, so you will need
 Cucumber-Ruby installed and available on the path. It is also needed
@@ -57,37 +48,44 @@ gem install bundler // For windows: gem install bundle
 bundle install
 ```
 
+### Windows vs. Linux
+
+To get an inspiration on how to set up the dependencies on your specific system (Windows or Linux), you may want to have a look at the
+workflow files [for Windows](.github/workflows/windows-build.yml) and [for Linux](.github/workflows/linux-build.yml).
+
+
+## Build
+
 Building Cucumber-Cpp with tests and samples:
 
 ```
-# Download test suite
-git submodule init
-git submodule update
-
 # Create build directory
 cmake -E make_directory build
 
 # Generate Makefiles
-cmake -E chdir build cmake -DCUKE_ENABLE_EXAMPLES=on -DCMAKE_INSTALL_PREFIX=${prefix} ..
+cmake -E chdir build cmake \
+    -DCUKE_ENABLE_BOOST_TEST=on \
+    -DCUKE_ENABLE_GTEST=on \
+    -DCUKE_ENABLE_QT_6=on \
+    -DCUKE_TESTS_UNIT=on \
+    -DCUKE_ENABLE_EXAMPLES=on \
+    ..
 
-# Build cucumber-cpp and tests
+# Build cucumber-cpp
 cmake --build build
 
 # Run unit tests
 cmake --build build --target test
 
 # Run install
-cmake --build build --target install
-
-# Check implementation against common cucumber test suite
-cmake --build build --target features
+cmake --install build
 ```
 
 Running the Calc example on Unix:
 
 ```
 build/examples/Calc/BoostCalculatorSteps >/dev/null &
-cucumber examples/Calc
+(cd examples/Calc; cucumber)
 ```
 
 Running the Calc example on Windows (NMake):
@@ -95,6 +93,27 @@ Running the Calc example on Windows (NMake):
 ```
 start build\examples\Calc\BoostCalculatorSteps.exe
 cucumber examples\Calc
+```
+
+## The way it works
+(This is a great explanation by [paoloambrosio](https://github.com/paoloambrosio) copied from [stackoverflow](https://stackoverflow.com/questions/50760865/cucumber-cpp-required-software-for-running-example))
+
+The way Cucumber-CPP currently works is by having Cucumber-Ruby connecting to a TCP port where the C++ implementation is listening. When the wire protocol is defined in the cucumber.wire file, with host and port where your C++ wire protocol server is listening, Cucumber-Ruby will try and run them with Cucumber-CPP.
+
+C++ is a compiled language, so step definitions must be compiled first. The examples provided use CMake, as described in the README. Cucumber-CPP needs to be linked to the step definitions and to everything that they use (usually the application under test), creating an executable file that will listen to the wire protocol port (defaults to localhost:3902) for Cucumber-Ruby to connect to (and exiting when it disconnects).
+
+```
+                    +------------------------------------------+
+                    |                                          |
++----------+        | +----------+  +----------+  +----------+ |
+|          |        | |          |  |          |  |          | |
+| Cucumber |        | | Cucumber |  | C++ Step |  | Your     | |
+| Ruby     |--------->| CPP Wire |--| Defs     |--| CPP App  | |
+|          |        | | Server   |  |          |  |          | |
+|          |        | |          |  |          |  |          | |
++----------+        | +----------+  +----------+  +----------+ |
+                    |                                          |
+                    +------------------------------------------+
 ```
 
 ## Getting started
@@ -114,6 +133,6 @@ port: 3902
 
 Create your first feature (an example is available [here](examples/Calc/features/addition.feature)).
 
-Then create your step definition runner (an example is available [here](examples/Calc/features/step_definitions/BoostCalculatorSteps.cpp)). In order to compile the step definition runner, make sure to add [cucumber include directory](includes) to the include path and link with *libcucumber-cpp.a* and additional testing libraries (boost unit test).
+Then create your step definition runner (an example is available [here](examples/Calc/features/step_definitions/BoostCalculatorSteps.cpp)). In order to compile the step definition runner, make sure to add [cucumber include directory](include/cucumber-cpp) to the include path and link with *libcucumber-cpp.a* and additional testing libraries (boost unit test).
 
 Run the step definition runner in the background and then cucumber, like in the Calc example in the previous section. The step definition runner should exit after the feature is run and cucumber exits.

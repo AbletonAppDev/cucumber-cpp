@@ -6,10 +6,7 @@
 #include "../Scenario.hpp"
 #include "../step/StepManager.hpp"
 
-#include <boost/config.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/shared_ptr.hpp>
-
+#include <memory>
 #include <list>
 
 namespace cucumber {
@@ -23,19 +20,21 @@ public:
 
 class CUCUMBER_CPP_EXPORT Hook {
 public:
-    virtual ~Hook() {}
+    virtual ~Hook() = default;
 
-    void setTags(const std::string &csvTagNotation);
-    virtual void invokeHook(Scenario *scenario, CallableStep *step);
+    void setTags(const std::string& csvTagNotation);
+    virtual void invokeHook(Scenario* scenario, CallableStep* step);
     virtual void skipHook();
     virtual void body() = 0;
-protected:
-    bool tagsMatch(Scenario *scenario);
 
-    template <typename Derived, typename R>
-    static R invokeWithArgs(Derived& that, R (Derived::* f)()) {
+protected:
+    bool tagsMatch(Scenario* scenario);
+
+    template<typename Derived, typename R>
+    static R invokeWithArgs(Derived& that, R (Derived::*f)()) {
         return (that.*f)();
     }
+
 private:
     AndTagExpression tagExpression;
 };
@@ -44,10 +43,11 @@ class CUCUMBER_CPP_EXPORT BeforeHook : public Hook {};
 
 class CUCUMBER_CPP_EXPORT AroundStepHook : public Hook {
 public:
-    virtual void invokeHook(Scenario *scenario, CallableStep *step);
-    virtual void skipHook();
+    void invokeHook(Scenario* scenario, CallableStep* step) override;
+    void skipHook() override;
+
 protected:
-    CallableStep *step;
+    CallableStep* step;
 };
 
 class CUCUMBER_CPP_EXPORT AfterStepHook : public Hook {};
@@ -56,7 +56,7 @@ class CUCUMBER_CPP_EXPORT AfterHook : public Hook {};
 
 class CUCUMBER_CPP_EXPORT UnconditionalHook : public Hook {
 public:
-    virtual void invokeHook(Scenario *scenario, CallableStep *step);
+    void invokeHook(Scenario* scenario, CallableStep* step) override;
 };
 
 class CUCUMBER_CPP_EXPORT BeforeAllHook : public UnconditionalHook {};
@@ -65,33 +65,35 @@ class CUCUMBER_CPP_EXPORT AfterAllHook : public UnconditionalHook {};
 
 class CUCUMBER_CPP_EXPORT HookRegistrar {
 public:
-    typedef std::list< boost::shared_ptr<Hook> > hook_list_type;
-    typedef std::list< boost::shared_ptr<AroundStepHook> > aroundhook_list_type;
+    typedef std::list<std::shared_ptr<Hook>> hook_list_type;
+    typedef std::list<std::shared_ptr<AroundStepHook>> aroundhook_list_type;
     typedef bool (*StepMatchingHook)(const boost::smatch&);
 
-    static void addBeforeHook(boost::shared_ptr<BeforeHook> afterHook);
-    static void execBeforeHooks(Scenario *scenario);
+    static void addBeforeHook(std::shared_ptr<BeforeHook> afterHook);
+    static void execBeforeHooks(Scenario* scenario);
 
-    static void addAroundStepHook(boost::shared_ptr<AroundStepHook> aroundStepHook);
-    static InvokeResult execStepChain(Scenario *scenario, const StepInfo* stepInfo, const InvokeArgs *pArgs);
+    static void addAroundStepHook(std::shared_ptr<AroundStepHook> aroundStepHook);
+    static InvokeResult execStepChain(
+        Scenario* scenario, const StepInfo* stepInfo, const InvokeArgs* pArgs
+    );
 
-    static void addAfterStepHook(boost::shared_ptr<AfterStepHook> afterStepHook);
-    static void execAfterStepHooks(Scenario *scenario);
+    static void addAfterStepHook(std::shared_ptr<AfterStepHook> afterStepHook);
+    static void execAfterStepHooks(Scenario* scenario);
 
-    static void addAfterHook(boost::shared_ptr<AfterHook> afterHook);
-    static void execAfterHooks(Scenario *scenario);
+    static void addAfterHook(std::shared_ptr<AfterHook> afterHook);
+    static void execAfterHooks(Scenario* scenario);
 
-    static void addBeforeAllHook(boost::shared_ptr<BeforeAllHook> beforeAllHook);
+    static void addBeforeAllHook(std::shared_ptr<BeforeAllHook> beforeAllHook);
     static void execBeforeAllHooks();
 
-    static void addAfterAllHook(boost::shared_ptr<AfterAllHook> afterAllHook);
+    static void addAfterAllHook(std::shared_ptr<AfterAllHook> afterAllHook);
     static void execAfterAllHooks();
 
     static void setStepMatchingHook(StepMatchingHook hook);
     static bool execStepMatchingHook(const boost::smatch& originalMatch);
 
 private:
-    static void execHooks(HookRegistrar::hook_list_type &hookList, Scenario *scenario);
+    static void execHooks(HookRegistrar::hook_list_type& hookList, Scenario* scenario);
 
 protected:
     static hook_list_type& beforeAllHooks();
@@ -104,24 +106,26 @@ protected:
 
 private:
     // We're a singleton so don't allow instances
-    HookRegistrar()
-#ifndef BOOST_NO_DELETED_FUNCTIONS
-        = delete
-#endif
-        ;
+    HookRegistrar() = delete;
 };
 
 class CUCUMBER_CPP_EXPORT StepCallChain {
 public:
-    StepCallChain(Scenario *scenario, const StepInfo* stepInfo, const InvokeArgs *pStepArgs, HookRegistrar::aroundhook_list_type &aroundHooks);
+    StepCallChain(
+        Scenario* scenario,
+        const StepInfo* stepInfo,
+        const InvokeArgs* pStepArgs,
+        HookRegistrar::aroundhook_list_type& aroundHooks
+    );
     InvokeResult exec();
     void execNext();
+
 private:
     void execStep();
 
-    Scenario *scenario;
+    Scenario* scenario;
     const StepInfo* stepInfo;
-    const InvokeArgs *pStepArgs;
+    const InvokeArgs* pStepArgs;
 
     HookRegistrar::aroundhook_list_type::iterator nextHook;
     HookRegistrar::aroundhook_list_type::iterator hookEnd;
@@ -130,55 +134,55 @@ private:
 
 class CUCUMBER_CPP_EXPORT CallableStepChain : public CallableStep {
 public:
-    CallableStepChain(StepCallChain *scc);
-    void call();
+    CallableStepChain(StepCallChain* scc);
+    void call() override;
+
 private:
-    StepCallChain *scc;
+    StepCallChain* scc;
 };
 
-
 template<class T>
-static int registerBeforeHook(const std::string &csvTagNotation) {
-   boost::shared_ptr<T> hook(boost::make_shared<T>());
-   hook->setTags(csvTagNotation);
-   HookRegistrar::addBeforeHook(hook);
-   return 0; // We are not interested in the ID at this time
+static int registerBeforeHook(const std::string& csvTagNotation) {
+    std::shared_ptr<T> hook(std::make_shared<T>());
+    hook->setTags(csvTagNotation);
+    HookRegistrar::addBeforeHook(hook);
+    return 0; // We are not interested in the ID at this time
 }
 
 template<class T>
-static int registerAroundStepHook(const std::string &csvTagNotation) {
-   boost::shared_ptr<T> hook(boost::make_shared<T>());
-   hook->setTags(csvTagNotation);
-   HookRegistrar::addAroundStepHook(hook);
-   return 0;
+static int registerAroundStepHook(const std::string& csvTagNotation) {
+    std::shared_ptr<T> hook(std::make_shared<T>());
+    hook->setTags(csvTagNotation);
+    HookRegistrar::addAroundStepHook(hook);
+    return 0;
 }
 
 template<class T>
-static int registerAfterStepHook(const std::string &csvTagNotation) {
-   boost::shared_ptr<T> hook(boost::make_shared<T>());
-   hook->setTags(csvTagNotation);
-   HookRegistrar::addAfterStepHook(hook);
-   return 0;
+static int registerAfterStepHook(const std::string& csvTagNotation) {
+    std::shared_ptr<T> hook(std::make_shared<T>());
+    hook->setTags(csvTagNotation);
+    HookRegistrar::addAfterStepHook(hook);
+    return 0;
 }
 
 template<class T>
-static int registerAfterHook(const std::string &csvTagNotation) {
-   boost::shared_ptr<T> hook(boost::make_shared<T>());
-   hook->setTags(csvTagNotation);
-   HookRegistrar::addAfterHook(hook);
-   return 0;
+static int registerAfterHook(const std::string& csvTagNotation) {
+    std::shared_ptr<T> hook(std::make_shared<T>());
+    hook->setTags(csvTagNotation);
+    HookRegistrar::addAfterHook(hook);
+    return 0;
 }
 
 template<class T>
 static int registerBeforeAllHook() {
-   HookRegistrar::addBeforeAllHook(boost::make_shared<T>());
-   return 0;
+    HookRegistrar::addBeforeAllHook(std::make_shared<T>());
+    return 0;
 }
 
 template<class T>
 static int registerAfterAllHook() {
-   HookRegistrar::addAfterAllHook(boost::make_shared<T>());
-   return 0;
+    HookRegistrar::addAfterAllHook(std::make_shared<T>());
+    return 0;
 }
 
 }

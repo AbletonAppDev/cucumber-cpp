@@ -4,6 +4,7 @@
 #include "StepManagerTestDouble.hpp"
 #include <cucumber-cpp/internal/CukeCommands.hpp>
 
+#include <cstring>
 #include <iostream>
 #include <string>
 
@@ -11,6 +12,7 @@ class ContextListener {
 private:
     static int createdContexts;
     static int destroyedContexts;
+
 public:
     int getCreatedContexts() {
         return createdContexts;
@@ -36,6 +38,7 @@ int ContextListener::destroyedContexts = 0;
 class SomeContext {
 private:
     ContextListener listener;
+
 public:
     SomeContext() {
         listener.notifyCreation();
@@ -50,12 +53,12 @@ namespace internal {
 
 static const InvokeArgs NO_INVOKE_ARGS;
 
-#define SUCCEED_MATCHER   "Succeeding step"
-#define FAIL_MATCHER      "Failing step"
+#define SUCCEED_MATCHER "Succeeding step"
+#define FAIL_MATCHER "Failing step"
 #define PENDING_MATCHER_1 "Pending step without description"
 #define PENDING_MATCHER_2 "Pending step with description"
 
-#define PENDING_DESCRIPTION    "Describe me!"
+#define PENDING_DESCRIPTION "Describe me!"
 
 class DriverTest {
 public:
@@ -67,21 +70,24 @@ public:
     DriverTest() {
         failedTests = 0;
     }
+
+    virtual ~DriverTest() = default;
+
 protected:
-    void expectTrue(const char *description, bool condition) {
+    void expectTrue(const char* description, bool condition) {
         updateState(description, condition);
     }
 
-    void expectFalse(const char *description, bool condition) {
+    void expectFalse(const char* description, bool condition) {
         updateState(description, !condition);
     }
 
     template<typename T>
-    void expectEqual(const char *description, T val1, T val2) {
+    void expectEqual(const char* description, T val1, T val2) {
         updateState(description, val1 == val2);
     }
 
-    void expectStrEqual(const char *description, const char *val1, const char *val2) {
+    void expectStrEqual(const char* description, const char* val1, const char* val2) {
         updateState(description, strcmp(val1, val2) == 0);
     }
 
@@ -92,15 +98,16 @@ protected:
     }
 
     CukeCommands cukeCommands;
+
 private:
     typedef StepManagerTestDouble StepManager;
     ContextListener listener;
 
     int failedTests;
 
-    void updateState(const char *description, bool testSuccessState) {
-        std::cout << (testSuccessState ? "SUCCESS" : "FAILURE")
-                  << " (" << description << ")" << std::endl;
+    void updateState(const char* description, bool testSuccessState) {
+        std::cout << (testSuccessState ? "SUCCESS" : "FAILURE") << " (" << description << ")"
+                  << std::endl;
         failedTests += testSuccessState ? 0 : 1;
     }
 
@@ -124,11 +131,17 @@ private:
 
         result = cukeCommands.invoke(getStepIdFromMatcher(PENDING_MATCHER_1), &NO_INVOKE_ARGS);
         expectTrue("Pending step with no description - result", result.isPending());
-        expectStrEqual("Pending step with no description - description", "", result.getDescription().c_str());
+        expectStrEqual(
+            "Pending step with no description - description", "", result.getDescription().c_str()
+        );
 
         result = cukeCommands.invoke(getStepIdFromMatcher(PENDING_MATCHER_2), &NO_INVOKE_ARGS);
         expectTrue("Pending step with description - result", result.isPending());
-        expectStrEqual("Pending step with description - description", PENDING_DESCRIPTION, result.getDescription().c_str());
+        expectStrEqual(
+            "Pending step with description - description",
+            PENDING_DESCRIPTION,
+            result.getDescription().c_str()
+        );
 
         result = cukeCommands.invoke(42, &NO_INVOKE_ARGS);
         expectFalse("Inexistent step", result.isSuccess());
@@ -166,7 +179,9 @@ private:
 
         result = cukeCommands.invoke(getStepIdFromMatcher(FAIL_MATCHER), &NO_INVOKE_ARGS);
 
-        expectEqual("Failing step description is the same", failureMessage, result.getDescription());
+        expectEqual(
+            "Failing step description is the same", failureMessage, result.getDescription()
+        );
     }
 };
 

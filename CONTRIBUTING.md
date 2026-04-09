@@ -2,7 +2,6 @@
 
 We appreciate that. But before you do, please learn our basic rules:
 
-* This is not a support or discussion forum. If you have a question, please ask it on [The Cukes Google Group](http://groups.google.com/group/cukes) or on [Gitter](https://gitter.im/cucumber/).
 * Do you have a feature request? Then don't expect it to be implemented unless you or someone else sends a [pull request](https://help.github.com/articles/using-pull-requests).
 * Reporting a bug? We need to know what compiler, operating system and architecture (32 or 64 bit) you are using, including versions of all libraries. Bugs with [pull requests](https://help.github.com/articles/using-pull-requests) get fixed quicker. Some bugs may never be fixed.
 * You have to tell us how to reproduce a bug. Bonus point for a [pull request](https://help.github.com/articles/using-pull-requests) with a failing test that reproduces the bug.
@@ -64,10 +63,9 @@ Here is an [Example](https://github.com/cucumber/bool/pull/12) of this process i
 ### Do a release
 
 - Release commit (e.g. [fdf8a5c](https://github.com/cucumber/cucumber-cpp/commit/fdf8a5c4ef4c51dfa7ea82077f706414a4c6322d)):
-  - Change `CHANGELOG.md` renaming the "In Git" section with the
-    release number and date
-  - Commit with message `Update changelog for the X.Y release`
-  - Create an annotated tag for this commit named `vX.Y`
+  - Change `CHANGELOG.md` renaming the "In Git" section with the release number and date
+  - Commit with message `Update changelog for the X.Y.Z release`
+  - Create an annotated tag for this commit named `vX.Y.Z`
 - New development branch commit (e.g. [da60995](https://github.com/cucumber/cucumber-cpp/commit/da609956fcd42046e5182c6226acd7e53dd7754e)):
   - Add new "In Git" section to `CHANGELOG.md`
   - Commit with message `Preparing history file for next development release`

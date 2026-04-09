@@ -1,17 +1,18 @@
-#ifndef CUKE_CUKECOMMANDSFIXTURE_HPP_ 
+#ifndef CUKE_CUKECOMMANDSFIXTURE_HPP_
 #define CUKE_CUKECOMMANDSFIXTURE_HPP_
 
 #include <cucumber-cpp/internal/CukeCommands.hpp>
 #include <cucumber-cpp/internal/drivers/GenericDriver.hpp>
 #include "StepManagerTestDouble.hpp"
 
-#include <boost/make_shared.hpp>
+#include <gtest/gtest.h>
+#include <memory>
 
 using namespace cucumber::internal;
-using boost::shared_ptr;
 
 class EmptyStep : public GenericStep {
-    void body() {}
+    void body() override {
+    }
 };
 
 class CukeCommandsFixture : public ::testing::Test, public CukeCommands {
@@ -31,11 +32,11 @@ protected:
     }
 
     template<class T>
-    void addStepToManager(const std::string &matcher) {
-        stepId = StepManager::addStep(boost::make_shared<StepInvoker<T> >(matcher, ""));
+    void addStepToManager(const std::string& matcher) {
+        stepId = StepManager::addStep(std::make_shared<StepInvoker<T>>(matcher, ""));
     }
 
-    virtual void TearDown() {
+    void TearDown() override {
         StepManager::clearSteps();
     }
 };
@@ -43,4 +44,3 @@ protected:
 const std::string CukeCommandsFixture::STATIC_MATCHER("MATCHER");
 
 #endif /* CUKE_CUKECOMMANDSFIXTURE_HPP_ */
-
