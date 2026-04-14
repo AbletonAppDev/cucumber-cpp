@@ -69,7 +69,7 @@ public:
      * Endpoint (IP address and port number) that this server is currently
      * listening on.
      *
-     * @throw std::system_error when not listening on any socket or
+     * @throw boost::system::system_error when not listening on any socket or
      *        the endpoint cannot be determined.
      */
     asio::ip::tcp::endpoint listenEndpoint() const;
@@ -99,7 +99,7 @@ public:
     /**
      * Port number that this server is currently listening on.
      *
-     * @throw std::system_error when not listening on any socket or
+     * @throw boost::system::system_error when not listening on any socket or
      *        the endpoint cannot be determined.
      */
     asio::local::stream_protocol::endpoint listenEndpoint() const;
