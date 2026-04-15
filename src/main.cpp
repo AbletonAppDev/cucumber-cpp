@@ -32,7 +32,7 @@ void acceptWireProtocol(
         TCPSocketServer* const tcpServer = new TCPSocketServer(&protocolHandler);
         server.reset(tcpServer);
         tcpServer->listen(
-            boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(host), port)
+            boost::asio::ip::tcp::endpoint(boost::asio::ip::make_address(host), port)
         );
         if (verbose)
             std::clog << "Listening on " << tcpServer->listenEndpoint() << std::endl;
