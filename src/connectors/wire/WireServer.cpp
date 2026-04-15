@@ -23,9 +23,8 @@ void SocketServer::doListen(
 
 template<typename Protocol>
 void SocketServer::doAcceptOnce(asio::basic_socket_acceptor<Protocol>& acceptor) {
-    typename Protocol::socket socket(ios);
-    acceptor.accept(socket);
-    typename Protocol::iostream stream(std::move(socket));
+    typename Protocol::iostream stream;
+    acceptor.accept(*stream.rdbuf());
     processStream(stream);
 }
 
