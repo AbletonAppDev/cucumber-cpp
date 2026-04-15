@@ -22,10 +22,13 @@ It relies on a few executables:
 
 It relies on a few libraries:
 
-* [Asio](https://think-async.com/Asio/) 1.18.1 or later.
-* [Boost.Test](https://www.boost.org/) 1.70. Optional for the Boost Test driver.
-* [GTest](https://github.com/google/googletest) 1.11.0 or later. Optional for the GTest driver.
-* [GMock](https://github.com/google/googletest) 1.11.0 or later. Optional for the internal test suite.
+* [Boost](http://www.boost.org/) 1.70.
+  Required libraries: *system*.
+  Optional library for Boost Test driver: *test*.
+* [GTest](http://code.google.com/p/googletest/) 1.6 or later.
+  Optional for the GTest driver. By default downloaded and built by CMake.
+* [GMock](http://code.google.com/p/googlemock/) 1.6 or later.
+  Optional for the internal test suite. By default downloaded and built by CMake.
 * [nlohmann-json](https://github.com/nlohmann/json) 3.10.5 or later.
 * [Qt6 or Qt5](https://qt-project.org/). Optional for the CalcQt example and QtTest driver.
 * [TCLAP](https://tclap.sourceforge.net/) 1.2.5 or later.

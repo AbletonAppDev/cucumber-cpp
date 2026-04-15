@@ -12,6 +12,10 @@
 #include <sstream>
 
 using namespace cucumber::internal;
+using namespace boost::asio::ip;
+#if defined(BOOST_ASIO_HAS_LOCAL_SOCKETS)
+using namespace boost::asio::local;
+#endif
 using namespace testing;
 
 static const auto THREAD_TEST_TIMEOUT = std::chrono::milliseconds(4000);
@@ -90,7 +94,7 @@ protected:
 
 TEST_F(TCPSocketServerTest, exitsOnFirstConnectionClosed) {
     // given
-    asio::ip::tcp::iostream client(server->listenEndpoint());
+    tcp::iostream client(server->listenEndpoint());
     ASSERT_THAT(client, IsConnected());
     ASSERT_THAT(server->listenEndpoint().address().to_string(), std::string("0.0.0.0"));
 
@@ -103,11 +107,11 @@ TEST_F(TCPSocketServerTest, exitsOnFirstConnectionClosed) {
 
 TEST_F(TCPSocketServerTest, moreThanOneClientCanConnect) {
     // given
-    asio::ip::tcp::iostream client1(server->listenEndpoint());
+    tcp::iostream client1(server->listenEndpoint());
     ASSERT_THAT(client1, IsConnected());
 
     // when
-    asio::ip::tcp::iostream client2(server->listenEndpoint());
+    tcp::iostream client2(server->listenEndpoint());
 
     // then
     ASSERT_THAT(client2, IsConnected());
@@ -122,7 +126,7 @@ TEST_F(TCPSocketServerTest, receiveAndSendsSingleLineMassages) {
     }
 
     // given
-    asio::ip::tcp::iostream client(server->listenEndpoint());
+    tcp::iostream client(server->listenEndpoint());
     ASSERT_THAT(client, IsConnected());
 
     // when
@@ -141,7 +145,7 @@ protected:
 
     SocketServer* createListeningServer() override {
         server.reset(new TCPSocketServer(&protocolHandler));
-        server->listen(asio::ip::tcp::endpoint(asio::ip::address::from_string("127.0.0.1"), 0));
+        server->listen(tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 0));
         return server.get();
     }
 
@@ -152,7 +156,7 @@ protected:
 
 TEST_F(TCPSocketServerLocalhostTest, listensOnLocalhost) {
     // given
-    asio::ip::tcp::iostream client(server->listenEndpoint());
+    tcp::iostream client(server->listenEndpoint());
     ASSERT_THAT(client, IsConnected());
     ASSERT_THAT(server->listenEndpoint().address().to_string(), std::string("127.0.0.1"));
 
@@ -163,7 +167,7 @@ TEST_F(TCPSocketServerLocalhostTest, listensOnLocalhost) {
     EXPECT_THAT(serverThread, EventuallyTerminates());
 }
 
-#if defined(ASIO_HAS_LOCAL_SOCKETS)
+#if defined(BOOST_ASIO_HAS_LOCAL_SOCKETS)
 class UnixSocketServerTest : public SocketServerTest {
 protected:
     std::unique_ptr<UnixSocketServer> server;
@@ -200,14 +204,14 @@ private:
  * created at startup and removed on shutdown.
  */
 TEST_F(UnixSocketServerTest, fullLifecycle) {
-    asio::local::stream_protocol::endpoint socketName = server->listenEndpoint();
+    stream_protocol::endpoint socketName = server->listenEndpoint();
     EXPECT_CALL(protocolHandler, handle("X")).WillRepeatedly(Return("Y"));
 
     // socket created at startup
     ASSERT_TRUE(std::filesystem::exists(socketName.path()));
 
     // traffic flows
-    asio::local::stream_protocol::iostream client(socketName);
+    stream_protocol::iostream client(socketName);
     client << "X" << std::endl << std::flush;
     EXPECT_THAT(client, EventuallyReceives("Y"));
 

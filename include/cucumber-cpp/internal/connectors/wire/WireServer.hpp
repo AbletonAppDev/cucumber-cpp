@@ -6,7 +6,7 @@
 
 #include <string>
 
-#include <asio.hpp>
+#include <boost/asio.hpp>
 
 namespace cucumber {
 namespace internal {
@@ -29,14 +29,15 @@ public:
 
 protected:
     const ProtocolHandler* protocolHandler;
-    asio::io_service ios;
+    boost::asio::io_service ios;
 
     template<typename Protocol>
     void doListen(
-        asio::basic_socket_acceptor<Protocol>& acceptor, const typename Protocol::endpoint& endpoint
+        boost::asio::basic_socket_acceptor<Protocol>& acceptor,
+        const typename Protocol::endpoint& endpoint
     );
     template<typename Protocol>
-    void doAcceptOnce(asio::basic_socket_acceptor<Protocol>& acceptor);
+    void doAcceptOnce(boost::asio::basic_socket_acceptor<Protocol>& acceptor);
     void processStream(std::iostream& stream);
 };
 
@@ -63,7 +64,7 @@ public:
     /**
      * Bind and listen to a TCP port on the given endpoint
      */
-    void listen(const asio::ip::tcp::endpoint endpoint);
+    void listen(const boost::asio::ip::tcp::endpoint endpoint);
 
     /**
      * Endpoint (IP address and port number) that this server is currently
@@ -72,15 +73,15 @@ public:
      * @throw boost::system::system_error when not listening on any socket or
      *        the endpoint cannot be determined.
      */
-    asio::ip::tcp::endpoint listenEndpoint() const;
+    boost::asio::ip::tcp::endpoint listenEndpoint() const;
 
     void acceptOnce() override;
 
 private:
-    asio::ip::tcp::acceptor acceptor;
+    boost::asio::ip::tcp::acceptor acceptor;
 };
 
-#if defined(ASIO_HAS_LOCAL_SOCKETS)
+#if defined(BOOST_ASIO_HAS_LOCAL_SOCKETS)
 /**
  * Socket server that calls a protocol handler line by line
  */
@@ -102,14 +103,14 @@ public:
      * @throw boost::system::system_error when not listening on any socket or
      *        the endpoint cannot be determined.
      */
-    asio::local::stream_protocol::endpoint listenEndpoint() const;
+    boost::asio::local::stream_protocol::endpoint listenEndpoint() const;
 
     void acceptOnce() override;
 
     ~UnixSocketServer() override;
 
 private:
-    asio::local::stream_protocol::acceptor acceptor;
+    boost::asio::local::stream_protocol::acceptor acceptor;
 };
 #endif
 
