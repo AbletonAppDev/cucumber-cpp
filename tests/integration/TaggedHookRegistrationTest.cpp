@@ -1,27 +1,50 @@
 #include <gtest/gtest.h>
 
-#include "../utils/HookRegistrationFixture.hpp"
+#include "utils/HookRegistrationFixture.hpp"
 #include <cucumber-cpp/internal/hook/HookMacros.hpp>
 
-#include <boost/assign.hpp>
-using boost::assign::list_of;
+BEFORE("@a") {
+    beforeHookCallMarker << "A";
+}
+BEFORE("@a", "@b") {
+    beforeHookCallMarker << "B";
+}
+BEFORE("@a,@b") {
+    beforeHookCallMarker << "C";
+}
 
-BEFORE("@a") { beforeHookCallMarker << "A"; }
-BEFORE("@a","@b") { beforeHookCallMarker << "B"; }
-BEFORE("@a,@b") { beforeHookCallMarker << "C"; }
+AROUND_STEP("@a") {
+    afterAroundStepHookCallMarker << "D";
+    step->call();
+}
+AROUND_STEP("@a", "@b") {
+    afterAroundStepHookCallMarker << "E";
+    step->call();
+}
+AROUND_STEP("@a,@b") {
+    afterAroundStepHookCallMarker << "F";
+    step->call();
+}
 
-AROUND_STEP("@a") { afterAroundStepHookCallMarker << "D"; step->call(); }
-AROUND_STEP("@a","@b") { afterAroundStepHookCallMarker << "E"; step->call(); }
-AROUND_STEP("@a,@b") { afterAroundStepHookCallMarker << "F"; step->call(); }
+AFTER_STEP("@a") {
+    afterStepHookCallMarker << "G";
+}
+AFTER_STEP("@a", "@b") {
+    afterStepHookCallMarker << "H";
+}
+AFTER_STEP("@a,@b") {
+    afterStepHookCallMarker << "I";
+}
 
-AFTER_STEP("@a") { afterStepHookCallMarker << "G"; }
-AFTER_STEP("@a","@b") { afterStepHookCallMarker << "H"; }
-AFTER_STEP("@a,@b") { afterStepHookCallMarker << "I"; }
-
-AFTER("@a") { afterHookCallMarker << "J"; }
-AFTER("@a","@b") { afterHookCallMarker << "K"; }
-AFTER("@a,@b") { afterHookCallMarker << "L"; }
-
+AFTER("@a") {
+    afterHookCallMarker << "J";
+}
+AFTER("@a", "@b") {
+    afterHookCallMarker << "K";
+}
+AFTER("@a,@b") {
+    afterHookCallMarker << "L";
+}
 
 TEST_F(HookRegistrationTest, noTaggedHooksAreInvokedIfNoScenarioTag) {
     beginScenario();
@@ -34,7 +57,7 @@ TEST_F(HookRegistrationTest, noTaggedHooksAreInvokedIfNoScenarioTag) {
 }
 
 TEST_F(HookRegistrationTest, orTagsAreEnforced) {
-    const TagExpression::tag_list tags = list_of("b");
+    const TagExpression::tag_list tags = {"b"};
     beginScenario(tags);
     invokeStep();
     endScenario();
@@ -45,7 +68,7 @@ TEST_F(HookRegistrationTest, orTagsAreEnforced) {
 }
 
 TEST_F(HookRegistrationTest, andTagsAreEnforced) {
-    const TagExpression::tag_list tags = list_of("a")("b");
+    const TagExpression::tag_list tags = {"a", "b"};
     beginScenario(tags);
     invokeStep();
     endScenario();

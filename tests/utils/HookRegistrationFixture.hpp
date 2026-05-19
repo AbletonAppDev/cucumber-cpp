@@ -5,7 +5,7 @@
 
 #include "CukeCommandsFixture.hpp"
 
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <sstream>
 
 using namespace cucumber::internal;
@@ -36,25 +36,23 @@ void clearHookCallMarkers() {
 }
 
 std::string getHookCallMarkers() {
-   return beforeAllHookCallMarker.str() +
-           beforeHookCallMarker.str() +
-           beforeAroundStepHookCallMarker.str() +
-           afterStepHookCallMarker.str() +
-           afterHookCallMarker.str() +
-           afterAllHookCallMarker.str();
+    return beforeAllHookCallMarker.str() + beforeHookCallMarker.str()
+           + beforeAroundStepHookCallMarker.str() + afterStepHookCallMarker.str()
+           + afterHookCallMarker.str() + afterAllHookCallMarker.str();
 }
 
 class EmptyCallableStep : public CallableStep {
 public:
-    void call() {};
+    void call() override{};
 };
 
 class HookRegistrarDouble : public HookRegistrar {
 public:
-    static void execAroundStepHooks(Scenario *scenario) {
+    static void execAroundStepHooks(Scenario* scenario) {
         EmptyCallableStep emptyStep;
-        aroundhook_list_type &ash = aroundStepHooks();
-        for (HookRegistrar::aroundhook_list_type::const_iterator h = ash.begin(); h != ash.end(); ++h) {
+        aroundhook_list_type& ash = aroundStepHooks();
+        for (HookRegistrar::aroundhook_list_type::const_iterator h = ash.begin(); h != ash.end();
+             ++h) {
             (*h)->invokeHook(scenario, &emptyStep);
         }
     }
@@ -64,13 +62,13 @@ static const InvokeArgs NO_INVOKE_ARGS;
 
 class HookRegistrationTest : public CukeCommandsFixture {
 protected:
-    shared_ptr<Scenario> emptyScenario;
+    std::shared_ptr<Scenario> emptyScenario;
 
     HookRegistrationTest() {
-        emptyScenario = boost::make_shared<Scenario>();
+        emptyScenario = std::make_shared<Scenario>();
     }
 
-    Scenario *getEmptyScenario() {
+    Scenario* getEmptyScenario() {
         return emptyScenario.get();
     }
 
@@ -98,7 +96,7 @@ protected:
         return getHookCallMarkers();
     }
 
-    void beginScenario(const TagExpression::tag_list & tags = TagExpression::tag_list()) {
+    void beginScenario(const TagExpression::tag_list& tags = TagExpression::tag_list()) {
         CukeCommandsFixture::beginScenario(tags);
     }
 
@@ -115,7 +113,7 @@ protected:
         return str;
     }
 
-    void SetUp() {
+    void SetUp() override {
         CukeCommandsFixture::SetUp();
         clearHookCallMarkers();
         addStepToManager<EmptyStep>(STATIC_MATCHER);

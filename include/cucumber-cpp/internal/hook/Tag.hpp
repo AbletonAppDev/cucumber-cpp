@@ -14,34 +14,34 @@ class CUCUMBER_CPP_EXPORT TagExpression {
 public:
     typedef std::vector<std::string> tag_list;
 
-    virtual ~TagExpression() { }
-    virtual bool matches(const tag_list &tags) const = 0;
+    virtual ~TagExpression() = default;
+    virtual bool matches(const tag_list& tags) const = 0;
 };
 
 class CUCUMBER_CPP_EXPORT OrTagExpression : public TagExpression {
 public:
-    OrTagExpression(const std::string &csvTagNotation);
-    bool matches(const tag_list &tags) const;
+    OrTagExpression(const std::string& csvTagNotation);
+    bool matches(const tag_list& tags) const override;
 
 private:
-    bool orTagMatchesTagList(const std::string &currentOrTag, const tag_list &tags) const;
+    bool orTagMatchesTagList(const std::string& currentOrTag, const tag_list& tags) const;
 
     tag_list orTags;
 
-    static Regex & csvTagNotationRegex();
+    static Regex& csvTagNotationRegex();
 };
 
 class CUCUMBER_CPP_EXPORT AndTagExpression : public TagExpression {
 public:
-    AndTagExpression();
-    AndTagExpression(const std::string &csvTagNotation);
-    bool matches(const tag_list &tags) const;
+    AndTagExpression() = default;
+    AndTagExpression(const std::string& csvTagNotation);
+    bool matches(const tag_list& tags) const override;
 
 private:
     typedef std::vector<OrTagExpression> or_expressions_type;
     or_expressions_type orExpressions;
 
-    static Regex & csvTagNotationRegex();
+    static Regex& csvTagNotationRegex();
 };
 
 }

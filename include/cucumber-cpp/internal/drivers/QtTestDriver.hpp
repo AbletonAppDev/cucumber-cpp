@@ -12,10 +12,12 @@ class CUCUMBER_CPP_EXPORT QtTestStep : public BasicStep {
     friend class QtTestObject;
 
 public:
-    QtTestStep() : BasicStep() {}
+    QtTestStep() :
+        BasicStep() {
+    }
 
 protected:
-    const InvokeResult invokeStepBody();
+    const InvokeResult invokeStepBody() override;
 };
 
 #define STEP_INHERITANCE(step_name) ::cucumber::internal::QtTestStep
@@ -23,8 +25,9 @@ protected:
 class QtTestObject : public QObject {
     Q_OBJECT
 public:
-    QtTestObject(QtTestStep* qtTestStep) : step(qtTestStep) {}
-    virtual ~QtTestObject() {}
+    QtTestObject(QtTestStep* qtTestStep) :
+        step(qtTestStep) {
+    }
 
 protected:
     QtTestStep* step;

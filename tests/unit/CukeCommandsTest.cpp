@@ -1,9 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <cucumber-cpp/internal/step/StepMacros.hpp>
-#include "../utils/CukeCommandsFixture.hpp"
-
-#include <boost/config.hpp>
+#include "utils/CukeCommandsFixture.hpp"
 
 using namespace cucumber::internal;
 
@@ -11,7 +9,7 @@ using std::string;
 
 class CukeCommandsTest : public CukeCommandsFixture {
 protected:
-    void addStepWithMatcher(const std::string &matcher) {
+    void addStepWithMatcher(const std::string& matcher) {
         addStepToManager<EmptyStep>(matcher);
     }
 };
@@ -41,7 +39,7 @@ const string CheckAllParameters::arg_3_string_with_spaces("forty two");
 
 class CheckAllParametersWithoutMacro : public CheckAllParameters {
 public:
-    void body() {
+    void body() override {
         EXPECT_EQ(arg_0_int, getArgs()->getInvokeArg<int>(0));
         EXPECT_EQ((double)arg_0_int, getArgs()->getInvokeArg<double>(0));
         EXPECT_NO_THROW(getArgs()->getInvokeArg<string>(0));
@@ -62,7 +60,7 @@ public:
 
 class CheckAllParametersWithMacro : public CheckAllParameters {
 public:
-    void body() {
+    void body() override {
         REGEX_PARAM(int, got_arg_0_int);
         EXPECT_EQ(arg_0_int, got_arg_0_int);
 
@@ -77,22 +75,21 @@ public:
     }
 };
 
-#ifndef BOOST_NO_VARIADIC_TEMPLATES
 class CheckAllParametersWithFuncArgs : public CheckAllParameters {
 public:
     void bodyWithArgs(
-            const int          got_arg_0_int
-          , const double       got_arg_1_double
-          , const std::string  got_arg_2_string
-          , const std::string& got_arg_3_string_with_spaces
-          ) {
+        const int got_arg_0_int,
+        const double got_arg_1_double,
+        const std::string got_arg_2_string,
+        const std::string& got_arg_3_string_with_spaces
+    ) {
         EXPECT_EQ(arg_0_int, got_arg_0_int);
         EXPECT_EQ(arg_1_double, got_arg_1_double);
         EXPECT_EQ(arg_2_string, got_arg_2_string);
         EXPECT_EQ(arg_3_string_with_spaces, got_arg_3_string_with_spaces);
     }
 
-    void body() {
+    void body() override {
         return invokeWithArgs(*this, &CheckAllParametersWithFuncArgs::bodyWithArgs);
     }
 };
@@ -101,7 +98,6 @@ TEST_F(CukeCommandsTest, invokeHandlesParametersWithFuncArgs) {
     // The real test is in TestClass::body()
     runStepBodyTest<CheckAllParametersWithFuncArgs>();
 }
-#endif
 
 TEST_F(CukeCommandsTest, matchesCorrectly) {
     addStepWithMatcher(STATIC_MATCHER);
@@ -120,15 +116,19 @@ TEST_F(CukeCommandsTest, invokeHandlesParametersWithMacro) {
 }
 
 TEST_F(CukeCommandsTest, producesSnippetsEscapingTitle) {
-    EXPECT_EQ("THEN(\"^x\\\\|y\\\"z$\") {\n"
-              "    pending();\n"
-              "}\n",
-              snippetText("then","x|y\"z"));
+    EXPECT_EQ(
+        "THEN(\"^x\\\\|y\\\"z$\") {\n"
+        "    pending();\n"
+        "}\n",
+        snippetText("then", "x|y\"z")
+    );
 }
 
 TEST_F(CukeCommandsTest, escapesCaractersInRegexes) {
     //  abc|()[]{}^$*+?.\def  <=  abc\|\(\)\[\]\{\}\^\$\*\+\?\.\\def
-    EXPECT_EQ("abc\\|\\(\\)\\[\\]\\{\\}\\^\\$\\*\\+\\?\\.\\\\def", escapeRegex("abc|()[]{}^$*+?.\\def"));
+    EXPECT_EQ(
+        "abc\\|\\(\\)\\[\\]\\{\\}\\^\\$\\*\\+\\?\\.\\\\def", escapeRegex("abc|()[]{}^$*+?.\\def")
+    );
 }
 
 TEST_F(CukeCommandsTest, escapesCharactersInCStrings) {

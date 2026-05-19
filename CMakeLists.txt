@@ -1,41 +1,47 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.16)
 
-if(NOT CMAKE_VERSION VERSION_LESS "3.3")
-    # Don't ignore visibility related properties for non-SHARED targets
-    cmake_policy(SET CMP0063 NEW)
-endif()
+cmake_policy(SET CMP0063 NEW)
 
-if (NOT CMAKE_VERSION VERSION_LESS "3.13")
-    # CMP0077: option() honors normal variables
-    # https://cmake.org/cmake/help/latest/policy/CMP0077.html
-    cmake_policy(SET CMP0077 NEW)
-endif()
+# CMP0077: option() honors normal variables
+# https://cmake.org/cmake/help/latest/policy/CMP0077.html
+cmake_policy(SET CMP0077 NEW)
+
+# CMP0074: find_package() makes use of <PackageName>_ROOT variables
+# https://cmake.org/cmake/help/latest/policy/CMP0074.html
+cmake_policy(SET CMP0074 NEW)
 
 project(Cucumber-Cpp)
 
-option(BUILD_SHARED_LIBS        "Generate shared libraries" OFF)
-option(CUKE_USE_STATIC_BOOST    "Statically link Boost (except boost::test)" ${WIN32})
-option(CUKE_USE_STATIC_GTEST    "Statically link Google Test" ON)
-option(CUKE_ENABLE_BOOST_TEST   "Enable Boost.Test framework" ON)
+option(CUKE_ENABLE_BOOST_TEST   "Enable Boost.Test framework" OFF)
+option(CUKE_ENABLE_GTEST        "Enable Google Test framework" OFF)
+option(CUKE_ENABLE_QT_5         "Enable Qt5 framework" OFF)
+option(CUKE_ENABLE_QT_6         "Enable Qt6 framework" OFF)
+
 option(CUKE_ENABLE_EXAMPLES     "Build examples" OFF)
-option(CUKE_ENABLE_GTEST        "Enable Google Test framework" ON)
-option(CUKE_ENABLE_QT           "Enable Qt framework" ON)
-option(CUKE_TESTS_E2E           "Enable end-to-end tests" ON)
-option(CUKE_TESTS_UNIT          "Enable unit tests" ON)
+option(CUKE_TESTS_UNIT          "Enable unit tests" OFF)
+
+option(BUILD_SHARED_LIBS        "Generate shared libraries" OFF)
+option(CUKE_CODE_COVERAGE       "Enable instrumentation for code coverage" OFF)
 set(CUKE_ENABLE_SANITIZER       "OFF" CACHE STRING "Sanitizer to use for checking")
 set_property(CACHE CUKE_ENABLE_SANITIZER PROPERTY STRINGS OFF "address" "thread" "undefined")
 option(CUKE_TESTS_VALGRIND      "Enable tests within Valgrind" OFF)
-set(GMOCK_SRC_DIR "" CACHE STRING "Google Mock framework sources path (otherwise downloaded)")
-set(GMOCK_VER "1.11.0" CACHE STRING "Google Mock framework version to be used")
+option(CUKE_STRICT              "Additional and more strict checks" OFF)
 
-# according to: https://github.com/google/googletest/tree/release-1.10.0#18x-release
-# the 1.8.x is the last release that works with pre-C++11 compilers.
-if(GMOCK_VER VERSION_GREATER_EQUAL "1.9.0")
-    if(NOT DEFINED CMAKE_CXX_STANDARD)
-        set(CMAKE_CXX_STANDARD 11)
-    elseif(CMAKE_CXX_STANDARD LESS 11)
-        message(FATAL_ERROR "C++11 (above) is required by googletest version: ${GMOCK_VER}")
-    endif()
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+elseif(CMAKE_CXX_STANDARD LESS 17)
+    message(FATAL_ERROR "C++17 (above) is required")
+endif()
+
+if(CUKE_CODE_COVERAGE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+endif()
+
+if(CUKE_STRICT)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DASIO_NO_DEPRECATED")
 endif()
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
@@ -66,18 +72,39 @@ endfunction()
 
 option_depr_invert (CUKE_DISABLE_BOOST_TEST   CUKE_ENABLE_BOOST_TEST)
 option_depr_invert (CUKE_DISABLE_GTEST        CUKE_ENABLE_GTEST)
-option_depr_invert (CUKE_DISABLE_QT           CUKE_ENABLE_QT)
-option_depr_invert (CUKE_DISABLE_E2E_TESTS    CUKE_TESTS_E2E)
+option_depr_invert (CUKE_DISABLE_QT_5         CUKE_ENABLE_QT_5)
+option_depr_invert (CUKE_DISABLE_QT_6         CUKE_ENABLE_QT_6)
 option_depr_invert (CUKE_DISABLE_UNIT_TESTS   CUKE_TESTS_UNIT)
 option_depr        (VALGRIND_TESTS            CUKE_TESTS_VALGRIND)
 
+#
+# Check that at least one test framework is enabled
+#
+
+set(CUKE_TEST_FRAMEWORKS
+    CUKE_ENABLE_BOOST_TEST
+    CUKE_ENABLE_GTEST
+    CUKE_ENABLE_QT_5
+    CUKE_ENABLE_QT_6
+)
+
+set(TEST_FRAMEWORK_FOUND FALSE)
+foreach(test_framework ${CUKE_TEST_FRAMEWORKS})
+    if(${test_framework})
+        set(TEST_FRAMEWORK_FOUND TRUE)
+    endif()
+endforeach()
+
+if(NOT TEST_FRAMEWORK_FOUND)
+    message(WARNING "No test framework enabled. At least one should be enabled. Options are: ${CUKE_TEST_FRAMEWORKS}.")
+endif()
 
 #
 # Generic Compiler Flags
 #
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT} -Werror -Wall -Wextra ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_INIT} -Wall -Wextra -Wsuggest-override ${CMAKE_CXX_FLAGS}")
     # TODO: A better fix should handle ld's --as-needed flag
     if(UNIX AND NOT APPLE)
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Xlinker '--no-as-needed'")
@@ -110,108 +137,11 @@ endif()
 # Boost
 #
 
-if(MSVC11)
-    # Boost 1.51 fixed a bug with MSVC11
-    message(STATUS "Forcing Boost 1.51+ on MSVC11")
-    set(BOOST_MIN_VERSION "1.51")
-else()
-    set(BOOST_MIN_VERSION "1.46")
-endif()
-
 set(Boost_USE_STATIC_RUNTIME OFF)
-set(CUKE_CORE_BOOST_LIBS thread system regex date_time program_options filesystem)
 if(CUKE_ENABLE_BOOST_TEST)
     # "An external test runner utility is required to link with dynamic library" (Boost User's Guide)
-    set(Boost_USE_STATIC_LIBS OFF)
     set(CMAKE_CXX_FLAGS "-DBOOST_TEST_DYN_LINK ${CMAKE_CXX_FLAGS}")
-    find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS unit_test_framework)
-endif()
-
-if(CUKE_USE_STATIC_BOOST)
-    set(Boost_USE_STATIC_LIBS ON)
-    find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS ${CUKE_CORE_BOOST_LIBS} REQUIRED)
-else()
-    set(CMAKE_CXX_FLAGS "-DBOOST_ALL_DYN_LINK ${CMAKE_CXX_FLAGS}")
-    set(Boost_USE_STATIC_LIBS OFF)
-    find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS ${CUKE_CORE_BOOST_LIBS} REQUIRED)
-endif()
-
-# according to: https://www.boost.org/users/history/version_1_76_0.html
-# C++11 (above) is required by boost::regex since v1.76.0
-if(Boost_VERSION VERSION_GREATER_EQUAL "1.76.0")
-    if(NOT DEFINED CMAKE_CXX_STANDARD)
-        set(CMAKE_CXX_STANDARD 11)
-    elseif(CMAKE_CXX_STANDARD LESS 11)
-        message(FATAL_ERROR "C++11 (above) is required by boost::regex version: ${Boost_VERSION}")
-    endif()
-endif()
-
-# Create import targets for CMake versions older than 3.5 (actually older FindBoost.cmake)
-if(Boost_USE_STATIC_LIBS)
-    set(LIBRARY_TYPE STATIC)
-else()
-    # Just because we don't ask for static doesn't mean we're not getting static
-    set(LIBRARY_TYPE UNKNOWN)
-endif()
-if(Boost_INCLUDE_DIRS AND NOT TARGET Boost::boost)
-    add_library(Boost::boost INTERFACE IMPORTED)
-    set_target_properties(Boost::boost PROPERTIES
-        "INTERFACE_INCLUDE_DIRECTORIES" "${Boost_INCLUDE_DIRS}")
-endif()
-if(Boost_THREAD_LIBRARY AND NOT TARGET Boost::thread)
-    find_package(Threads REQUIRED)
-    add_library(Boost::thread ${LIBRARY_TYPE} IMPORTED)
-    set_target_properties(Boost::thread PROPERTIES
-        "IMPORTED_LOCATION" "${Boost_THREAD_LIBRARY}"
-        "INTERFACE_LINK_LIBRARIES" "Threads::Threads;Boost::boost"
-    )
-endif()
-if(Boost_SYSTEM_LIBRARY AND NOT TARGET Boost::system)
-    add_library(Boost::system ${LIBRARY_TYPE} IMPORTED)
-    set_target_properties(Boost::system PROPERTIES
-        "IMPORTED_LOCATION" "${Boost_SYSTEM_LIBRARY}"
-        "INTERFACE_LINK_LIBRARIES" "Boost::boost"
-    )
-    if(Boost_USE_STATIC_LIBS)
-        set_target_properties(Boost::system PROPERTIES
-            "COMPILE_DEFINITIONS" BOOST_ERROR_CODE_HEADER_ONLY=1
-        )
-    endif()
-endif()
-if(Boost_FILESYSTEM_LIBRARY AND NOT TARGET Boost::filesystem)
-    add_library(Boost::filesystem ${LIBRARY_TYPE} IMPORTED)
-    set_target_properties(Boost::filesystem PROPERTIES
-        "IMPORTED_LOCATION" "${Boost_FILESYSTEM_LIBRARY}"
-        "INTERFACE_LINK_LIBRARIES" "Boost::system;Boost::boost"
-    )
-endif()
-if(Boost_REGEX_LIBRARY AND NOT TARGET Boost::regex)
-    add_library(Boost::regex ${LIBRARY_TYPE} IMPORTED)
-    set_target_properties(Boost::regex PROPERTIES
-        "IMPORTED_LOCATION" "${Boost_REGEX_LIBRARY}"
-        "INTERFACE_LINK_LIBRARIES" "Boost::boost"
-    )
-endif()
-if(Boost_DATE_TIME_LIBRARY AND NOT TARGET Boost::date_time)
-    add_library(Boost::date_time ${LIBRARY_TYPE} IMPORTED)
-    set_target_properties(Boost::date_time PROPERTIES
-        "IMPORTED_LOCATION" "${Boost_DATE_TIME_LIBRARY}"
-        "INTERFACE_LINK_LIBRARIES" "Boost::boost"
-    )
-endif()
-if(Boost_PROGRAM_OPTIONS_LIBRARY AND NOT TARGET Boost::program_options)
-    add_library(Boost::program_options ${LIBRARY_TYPE} IMPORTED)
-    set_target_properties(Boost::program_options PROPERTIES
-        "IMPORTED_LOCATION" "${Boost_PROGRAM_OPTIONS_LIBRARY}"
-        "INTERFACE_LINK_LIBRARIES" "Boost::boost"
-    )
-endif()
-if(Boost_UNIT_TEST_FRAMEWORK_LIBRARY AND NOT TARGET Boost::unit_test_framework)
-    add_library(Boost::unit_test_framework ${LIBRARY_TYPE} IMPORTED)
-    set_target_properties(Boost::unit_test_framework PROPERTIES
-        "IMPORTED_LOCATION" "${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}"
-        "INTERFACE_LINK_LIBRARIES" "Boost::boost"
-    )
+    find_package(Boost 1.70 COMPONENTS unit_test_framework REQUIRED)
 endif()
 
 #
@@ -219,29 +149,28 @@ endif()
 #
 
 if(CUKE_ENABLE_GTEST)
-    set(GTEST_USE_STATIC_LIBS ${CUKE_USE_STATIC_GTEST})
-    if(NOT GMOCK_ROOT)
-        set(GMOCK_ROOT "${CMAKE_CURRENT_BINARY_DIR}/gmock")
-    endif()
-    find_package(GMock REQUIRED)
+    find_package(GTest 1.11.0 REQUIRED)
 endif()
 
 #
 # Qt
 #
 
-if(CUKE_ENABLE_QT)
-    find_package(Qt5Core)
-    find_package(Qt5Gui)
-    find_package(Qt5Widgets)
-    find_package(Qt5Test)
+if(CUKE_ENABLE_QT_5 AND CUKE_ENABLE_QT_6)
+    message(FATAL_ERROR "Qt version 5 and 6 enabled, please select at most one")
+endif()
 
-    if(Qt5Core_FOUND AND Qt5Gui_FOUND AND Qt5Widgets_FOUND AND Qt5Test_FOUND)
-        message(STATUS "Found Qt version: ${Qt5Core_VERSION_STRING}")
-        if(NOT Qt5Core_VERSION_STRING VERSION_LESS 5.7 AND (NOT DEFINED CMAKE_CXX_STANDARD OR NOT CMAKE_CXX_STANDARD STREQUAL 98))
-            message(STATUS "C++11 is needed from Qt version 5.7.0, building with c++11 enabled")
-            set(CMAKE_CXX_STANDARD 11)
-        endif()
+
+if(CUKE_ENABLE_QT_5)
+    find_package(Qt5 REQUIRED COMPONENTS
+        Core
+        Gui
+        Widgets
+        Test
+    )
+
+    message(STATUS "Found Qt version: ${Qt5Core_VERSION_STRING}")
+    if(Qt5Core_VERSION_STRING VERSION_LESS 5.15.0)
         add_library(Qt::Core    INTERFACE IMPORTED)
         add_library(Qt::Gui     INTERFACE IMPORTED)
         add_library(Qt::Widgets INTERFACE IMPORTED)
@@ -250,20 +179,18 @@ if(CUKE_ENABLE_QT)
         set_target_properties(Qt::Gui     PROPERTIES INTERFACE_LINK_LIBRARIES Qt5::Gui    )
         set_target_properties(Qt::Widgets PROPERTIES INTERFACE_LINK_LIBRARIES Qt5::Widgets)
         set_target_properties(Qt::Test    PROPERTIES INTERFACE_LINK_LIBRARIES Qt5::Test   )
-    else()
-        find_package(Qt4 COMPONENTS QtCore QtGui QtTest)
-        if(QT4_FOUND)
-            add_library(Qt::Core    INTERFACE IMPORTED)
-            add_library(Qt::Gui     INTERFACE IMPORTED)
-            add_library(Qt::Widgets INTERFACE IMPORTED)
-            add_library(Qt::Test    INTERFACE IMPORTED)
-            set_target_properties(Qt::Core    PROPERTIES INTERFACE_LINK_LIBRARIES Qt4::QtCore)
-            set_target_properties(Qt::Gui     PROPERTIES INTERFACE_LINK_LIBRARIES Qt4::QtGui )
-            set_target_properties(Qt::Widgets PROPERTIES INTERFACE_LINK_LIBRARIES Qt4::QtGui )
-            set_target_properties(Qt::Test    PROPERTIES INTERFACE_LINK_LIBRARIES Qt4::QtTest)
-            include(${QT_USE_FILE})
-        endif()
     endif()
+endif()
+
+if(CUKE_ENABLE_QT_6)
+    find_package(Qt6 REQUIRED COMPONENTS
+        Core
+        Gui
+        Widgets
+        Test
+    )
+
+    message(STATUS "Found Qt version: ${Qt6Core_VERSION}")
 endif()
 
 
@@ -337,7 +264,6 @@ endif()
 #
 
 set(CUKE_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
-add_subdirectory(3rdparty/json_spirit)
 add_subdirectory(src)
 
 #
@@ -349,71 +275,6 @@ if(CUKE_TESTS_UNIT)
     add_subdirectory(tests)
 else()
     message(STATUS "Skipping unit tests")
-endif()
-
-if(NOT CUKE_TESTS_E2E)
-    message(STATUS "Skipping end-to-end tests")
-else()
-    find_program(CUCUMBER_RUBY cucumber)
-    if(CUCUMBER_RUBY)
-        message(STATUS "Found Cucumber")
-        set(CUKE_FEATURES_DIR "${CMAKE_SOURCE_DIR}/features")
-        set(CUKE_FEATURES_TMP "${CMAKE_BINARY_DIR}/tmp")
-        set(CUKE_TEST_FEATURES_DIR "${CUKE_FEATURES_TMP}/test_features")
-        set(CUKE_DYNAMIC_CPP_STEPS "${CUKE_TEST_FEATURES_DIR}/step_definitions/cpp_steps.cpp")
-        string(REPLACE "/tmp" "${CMAKE_FILES_DIRECTORY}/e2e-steps.dir/tmp" CUKE_DYNAMIC_CPP_STEPS_OBJ "${CUKE_DYNAMIC_CPP_STEPS}${CMAKE_CXX_OUTPUT_EXTENSION}")
-
-        add_executable(e2e-steps EXCLUDE_FROM_ALL ${CUKE_DYNAMIC_CPP_STEPS})
-        # Mark this file as generated so it isn't required at CMake generation time (it is necessary when the target gets built though)
-        set_source_files_properties(${CUKE_DYNAMIC_CPP_STEPS} PROPERTIES GENERATED TRUE)
-        target_link_libraries(e2e-steps PRIVATE cucumber-cpp)
-        #Boost test lib required for boost specific scenario "Predicate Message"
-        if(TARGET Boost::unit_test_framework)
-            target_link_libraries(e2e-steps PRIVATE Boost::unit_test_framework)
-        else()
-            set(CUKE_E2E_TAGS "--tags ~@boost")
-        endif()
-
-        set(CUKE_COMPILE_DYNAMIC_CPP_STEPS '"${CMAKE_COMMAND}" --build "${CMAKE_BINARY_DIR}" --target e2e-steps')
-
-        function(add_feature_target TARGET_NAME)
-            # Ensure we get colored output from cucumber and give it direct terminal access if
-            # possible. Direct terminal access would cause the output to be displayed as it's being
-            # produced instead of when cucumber is finished.
-            if(CMAKE_GENERATOR STREQUAL "Ninja")
-                list(APPEND ARGN --color)
-            endif()
-            set(USES_TERMINAL)
-            if(NOT CMAKE_VERSION VERSION_LESS 3.2)
-                set(USES_TERMINAL USES_TERMINAL)
-            endif()
-            add_custom_target(${TARGET_NAME}
-                COMMAND ${CUCUMBER_RUBY}
-                TEST_FEATURES_DIR=${CUKE_TEST_FEATURES_DIR}
-                TMP_DIR=${CUKE_FEATURES_TMP}
-                DYNAMIC_CPP_STEPS_SRC=${CUKE_DYNAMIC_CPP_STEPS}
-                DYNAMIC_CPP_STEPS_EXE=${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/e2e-steps
-                DYNAMIC_CPP_STEPS_OBJ=${CUKE_DYNAMIC_CPP_STEPS_OBJ}
-                COMPILE_DYNAMIC_CPP_STEPS=${CUKE_COMPILE_DYNAMIC_CPP_STEPS}
-                CUCUMBER_RUBY=${CUCUMBER_RUBY}
-                --format=junit "--out=${CMAKE_BINARY_DIR}/features"
-                ${CUKE_E2E_TAGS}
-                ${ARGN}
-                ${CUKE_FEATURES_DIR}
-                ${USES_TERMINAL}
-                # Execute in same directory as where DLLs appear on Windows
-                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/src
-                )
-        endfunction(add_feature_target)
-
-        add_feature_target(features         --format progress)
-        add_feature_target(features-pretty  --format pretty)
-        add_feature_target(features-wip     --format pretty --tags @wip)
-
-    else()
-        message(WARNING "Could not find Cucumber: skipping end-to-end tests")
-    endif()
-
 endif()
 
 #

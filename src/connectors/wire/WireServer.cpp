@@ -1,5 +1,5 @@
 #include <cucumber-cpp/internal/connectors/wire/WireServer.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <filesystem>
 
 namespace cucumber {
 namespace internal {
@@ -10,20 +10,15 @@ using namespace boost::asio::ip;
 using namespace boost::asio::local;
 #endif
 
-SocketServer::SocketServer(const ProtocolHandler *protocolHandler) :
+SocketServer::SocketServer(const ProtocolHandler* protocolHandler) :
     protocolHandler(protocolHandler),
     ios() {
 }
 
-#if BOOST_VERSION <= 106500
-template <typename Protocol, typename Service>
-void SocketServer::doListen(basic_socket_acceptor<Protocol, Service>& acceptor,
-                            const typename Protocol::endpoint& endpoint) {
-#else
-template <typename Protocol>
-void SocketServer::doListen(basic_socket_acceptor<Protocol>& acceptor,
-                            const typename Protocol::endpoint& endpoint) {
-#endif
+template<typename Protocol>
+void SocketServer::doListen(
+    basic_socket_acceptor<Protocol>& acceptor, const typename Protocol::endpoint& endpoint
+) {
     if (acceptor.is_open())
         throw boost::system::system_error(boost::asio::error::already_open);
     acceptor.open(endpoint.protocol());
@@ -32,15 +27,11 @@ void SocketServer::doListen(basic_socket_acceptor<Protocol>& acceptor,
     acceptor.listen(1);
 }
 
-#if BOOST_VERSION <= 106500
-template <typename Protocol, typename Service>
-void SocketServer::doAcceptOnce(basic_socket_acceptor<Protocol, Service>& acceptor) {
-#else
-template <typename Protocol>
+template<typename Protocol>
 void SocketServer::doAcceptOnce(basic_socket_acceptor<Protocol>& acceptor) {
-#endif
-    typename Protocol::iostream stream;
-    acceptor.accept(*stream.rdbuf());
+    typename Protocol::socket socket(ios);
+    acceptor.accept(socket);
+    typename Protocol::iostream stream(std::move(socket));
     processStream(stream);
 }
 
@@ -51,7 +42,7 @@ void SocketServer::processStream(std::iostream& stream) {
     }
 }
 
-TCPSocketServer::TCPSocketServer(const ProtocolHandler *protocolHandler) :
+TCPSocketServer::TCPSocketServer(const ProtocolHandler* protocolHandler) :
     SocketServer(protocolHandler),
     acceptor(ios) {
 }
@@ -74,14 +65,14 @@ void TCPSocketServer::acceptOnce() {
 }
 
 #if defined(BOOST_ASIO_HAS_LOCAL_SOCKETS)
-UnixSocketServer::UnixSocketServer(const ProtocolHandler *protocolHandler) :
+UnixSocketServer::UnixSocketServer(const ProtocolHandler* protocolHandler) :
     SocketServer(protocolHandler),
     acceptor(ios) {
 }
 
 void UnixSocketServer::listen(const std::string& unixPath) {
-    if (boost::filesystem::status(unixPath).type() == boost::filesystem::socket_file)
-        boost::filesystem::remove(unixPath);
+    if (std::filesystem::status(unixPath).type() == std::filesystem::file_type::socket)
+        std::filesystem::remove(unixPath);
 
     doListen(acceptor, stream_protocol::endpoint(unixPath));
 }
@@ -98,8 +89,9 @@ UnixSocketServer::~UnixSocketServer() {
     if (!acceptor.is_open())
         return;
     std::string path = acceptor.local_endpoint().path();
-    // NOTE: this will fail if this path got deleted manually or represents an abstract-namespace socket
-    boost::filesystem::remove(path);
+    // NOTE: this will fail if this path got deleted manually or represents an abstract-namespace
+    // socket
+    std::filesystem::remove(path);
 }
 #endif
 

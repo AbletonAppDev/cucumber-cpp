@@ -1,7 +1,7 @@
 #include <QtTest>
 #include <cucumber-cpp/autodetect.hpp>
 
-#include "../../utils/DriverTestRunner.hpp"
+#include "utils/DriverTestRunner.hpp"
 
 using namespace cucumber;
 
@@ -27,13 +27,16 @@ using namespace cucumber::internal;
 
 class QtTestStepDouble : public QtTestStep {
 public:
-    QtTestStepDouble() : QtTestStep(), testRun(false) {}
+    QtTestStepDouble() :
+        QtTestStep(),
+        testRun(false) {
+    }
 
-    const InvokeResult invokeStepBody() {
+    const InvokeResult invokeStepBody() override {
         return QtTestStep::invokeStepBody();
     }
 
-    void body() {
+    void body() override {
         testRun = true;
     }
 
@@ -42,7 +45,7 @@ public:
 
 class QtTestDriverTest : public DriverTest {
 public:
-    virtual void runAllTests() {
+    void runAllTests() override {
         stepInvocationRunsStepBody();
         DriverTest::runAllTests();
     }

@@ -7,6 +7,8 @@
 
 # Build artifacts
 /build/
+/coverage/
+/.local/
 
 # vim swap files
 *.swp
@@ -18,3 +20,5 @@
 # Qt Creator
 /CMakeLists.txt.user
 
+# build folder
+build
