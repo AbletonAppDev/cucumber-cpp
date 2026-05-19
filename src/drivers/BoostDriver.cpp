@@ -2,12 +2,10 @@
 
 #include <sstream>
 
-#include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/test/unit_test_log_formatter.hpp>
-#include <boost/thread/once.hpp>
+#include <mutex>
 #include <boost/version.hpp>
 
 using namespace ::boost::unit_test;
@@ -16,18 +14,16 @@ using ::boost::execution_exception;
 namespace cucumber {
 namespace internal {
 
-
 namespace {
 
-    test_case* testCase = 0;
-    boost::function<void()> currentTestBody;
+test_case* testCase = 0;
+boost::function<void()> currentTestBody;
 
-    void exec_test_body() {
-        if (currentTestBody) {
-            currentTestBody();
-        }
+void exec_test_body() {
+    if (currentTestBody) {
+        currentTestBody();
     }
-
+}
 
 bool boost_test_init() {
     testCase = BOOST_TEST_CASE(&exec_test_body);
@@ -37,10 +33,9 @@ bool boost_test_init() {
 }
 
 // Freed by Boost's unit test framework on exit
-static CukeBoostLogInterceptor *logInterceptor = 0;
+static CukeBoostLogInterceptor* logInterceptor = 0;
 
 }
-
 
 class CukeBoostLogInterceptor : public ::boost::unit_test::unit_test_log_formatter {
 public:
@@ -48,34 +43,30 @@ public:
     void reset();
 
     // Formatter
-    void log_start( std::ostream&, counter_t /*test_cases_amount*/) {};
-    void log_finish( std::ostream&) {};
-#if BOOST_VERSION >= 107000
-    void log_build_info(std::ostream&, bool /*log_build_info*/){};
-#else
-    void log_build_info( std::ostream&) {};
-#endif
+    void log_start(std::ostream&, counter_t /*test_cases_amount*/) override{};
+    void log_finish(std::ostream&) override{};
+    void log_build_info(std::ostream&, bool /*log_build_info*/) override{};
 
-    void test_unit_start( std::ostream&, test_unit const& /*tu*/) {};
-    void test_unit_finish( std::ostream&, test_unit const& /*tu*/, unsigned long /*elapsed*/) {};
-    void test_unit_skipped( std::ostream&, test_unit const& /*tu*/) {};
+    void test_unit_start(std::ostream&, test_unit const& /*tu*/) override{};
+    void test_unit_finish(std::ostream&, test_unit const& /*tu*/, unsigned long /*elapsed*/)
+        override{};
+    void test_unit_skipped(std::ostream&, test_unit const& /*tu*/) override{};
 
-    void log_exception_start( std::ostream&, log_checkpoint_data const&, execution_exception const&) {};
-    void log_exception_finish( std::ostream& ) {};
+    void log_exception_start(std::ostream&, log_checkpoint_data const&, execution_exception const&)
+        override{};
+    void log_exception_finish(std::ostream&) override{};
 
-    void log_entry_start( std::ostream&, log_entry_data const&, log_entry_types /*let*/) {};
-    void log_entry_value( std::ostream&, const_string value);
-    void log_entry_value( std::ostream&, lazy_ostream const& value);
-    void log_entry_finish( std::ostream&) {};
+    void log_entry_start(std::ostream&, log_entry_data const&, log_entry_types /*let*/) override{};
+    void log_entry_value(std::ostream&, const_string value) override;
+    void log_entry_value(std::ostream&, lazy_ostream const& value) override;
+    void log_entry_finish(std::ostream&) override{};
 
-    void entry_context_start( std::ostream&, log_level /*l*/) {}
-#if BOOST_VERSION >= 106500
-    void log_entry_context( std::ostream&, log_level /*l*/, const_string /*value*/) {}
-    void entry_context_finish( std::ostream&, log_level /*l*/ ) {}
-#else
-    void log_entry_context( std::ostream&, const_string /*value*/) {}
-    void entry_context_finish( std::ostream& ) {}
-#endif
+    void entry_context_start(std::ostream&, log_level /*l*/) override {
+    }
+    void log_entry_context(std::ostream&, log_level /*l*/, const_string /*value*/) override {
+    }
+    void entry_context_finish(std::ostream&, log_level /*l*/) override {
+    }
 
 private:
     std::stringstream description;
@@ -106,8 +97,8 @@ const InvokeResult CukeBoostLogInterceptor::getResult() const {
 }
 
 const InvokeResult BoostStep::invokeStepBody() {
-    static boost::once_flag initialized;
-    boost::call_once(initialized, BoostStep::initBoostTest);
+    static std::once_flag initialized;
+    std::call_once(initialized, BoostStep::initBoostTest);
 
     logInterceptor->reset();
     runWithMasterSuite();
@@ -117,20 +108,18 @@ const InvokeResult BoostStep::invokeStepBody() {
 void BoostStep::initBoostTest() {
     int argc = 1;
     char dummyArg[] = "dummy";
-    char *argv[] = { dummyArg };
+    char* argv[] = {dummyArg};
     framework::init(&boost_test_init, argc, argv);
-#if BOOST_VERSION >= 105900
     framework::finalize_setup_phase();
-#endif
-    
+
     logInterceptor = new CukeBoostLogInterceptor;
     ::boost::unit_test::unit_test_log.set_formatter(logInterceptor);
     ::boost::unit_test::unit_test_log.set_threshold_level(log_all_errors);
 }
 
 void BoostStep::runWithMasterSuite() {
-    currentTestBody = boost::bind(&BoostStep::body, this);
-    
+    currentTestBody = std::bind(&BoostStep::body, this);
+
     ::boost::unit_test::framework::run(testCase, false);
 
     currentTestBody.clear();

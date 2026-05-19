@@ -17,10 +17,10 @@ namespace internal {
 class CUCUMBER_CPP_EXPORT SocketServer {
 public:
     /**
-      * Constructor for DI
-      */
-    SocketServer(const ProtocolHandler *protocolHandler);
-    virtual ~SocketServer() {}
+     * Constructor for DI
+     */
+    SocketServer(const ProtocolHandler* protocolHandler);
+    virtual ~SocketServer() = default;
 
     /**
      * Accept one connection
@@ -28,23 +28,17 @@ public:
     virtual void acceptOnce() = 0;
 
 protected:
-    const ProtocolHandler *protocolHandler;
-    boost::asio::io_service ios;
+    const ProtocolHandler* protocolHandler;
+    boost::asio::io_context ios;
 
-#if BOOST_VERSION <= 106500
-    template <typename Protocol, typename Service>
-    void doListen(boost::asio::basic_socket_acceptor<Protocol, Service>& acceptor,
-                  const typename Protocol::endpoint& endpoint);
-    template <typename Protocol, typename Service>
-    void doAcceptOnce(boost::asio::basic_socket_acceptor<Protocol, Service>& acceptor);
-#else
-    template <typename Protocol>
-    void doListen(boost::asio::basic_socket_acceptor<Protocol>& acceptor,
-                  const typename Protocol::endpoint& endpoint);
-    template <typename Protocol>
+    template<typename Protocol>
+    void doListen(
+        boost::asio::basic_socket_acceptor<Protocol>& acceptor,
+        const typename Protocol::endpoint& endpoint
+    );
+    template<typename Protocol>
     void doAcceptOnce(boost::asio::basic_socket_acceptor<Protocol>& acceptor);
-#endif
-    void processStream(std::iostream &stream);
+    void processStream(std::iostream& stream);
 };
 
 /**
@@ -58,9 +52,9 @@ public:
     typedef unsigned short port_type;
 
     /**
-      * Constructor for DI
-      */
-    TCPSocketServer(const ProtocolHandler *protocolHandler);
+     * Constructor for DI
+     */
+    TCPSocketServer(const ProtocolHandler* protocolHandler);
 
     /**
      * Bind and listen to a TCP port
@@ -81,7 +75,7 @@ public:
      */
     boost::asio::ip::tcp::endpoint listenEndpoint() const;
 
-    virtual void acceptOnce();
+    void acceptOnce() override;
 
 private:
     boost::asio::ip::tcp::acceptor acceptor;
@@ -94,9 +88,9 @@ private:
 class CUCUMBER_CPP_EXPORT UnixSocketServer : public SocketServer {
 public:
     /**
-      * Constructor for DI
-      */
-    UnixSocketServer(const ProtocolHandler *protocolHandler);
+     * Constructor for DI
+     */
+    UnixSocketServer(const ProtocolHandler* protocolHandler);
 
     /**
      * Bind and listen on a local stream socket
@@ -111,9 +105,9 @@ public:
      */
     boost::asio::local::stream_protocol::endpoint listenEndpoint() const;
 
-    virtual void acceptOnce();
+    void acceptOnce() override;
 
-    ~UnixSocketServer();
+    ~UnixSocketServer() override;
 
 private:
     boost::asio::local::stream_protocol::acceptor acceptor;

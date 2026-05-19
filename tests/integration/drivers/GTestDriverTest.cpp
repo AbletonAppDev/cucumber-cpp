@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <cucumber-cpp/autodetect.hpp>
 
-#include "../../utils/DriverTestRunner.hpp"
+#include "utils/DriverTestRunner.hpp"
 
 using namespace cucumber;
 
@@ -31,16 +31,16 @@ public:
         return GTestStep::initialized;
     }
 
-    const InvokeResult invokeStepBody() {
+    const InvokeResult invokeStepBody() override {
         return GTestStep::invokeStepBody();
     };
 
-    void body() {};
+    void body() override{};
 };
 
 class GTestDriverTest : public DriverTest {
 public:
-    virtual void runAllTests() {
+    void runAllTests() override {
         stepInvocationInitsGTest();
         DriverTest::runAllTests();
     }
@@ -49,7 +49,9 @@ private:
     void stepInvocationInitsGTest() {
         std::cout << "= Init =" << std::endl;
         GTestStepDouble framework;
-        expectFalse("Framework is not initialized before the first test", framework.isInitialized());
+        expectFalse(
+            "Framework is not initialized before the first test", framework.isInitialized()
+        );
         framework.invokeStepBody();
         expectTrue("Framework is initialized after the first test", framework.isInitialized());
     }

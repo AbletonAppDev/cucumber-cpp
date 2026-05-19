@@ -1,6 +1,5 @@
 #include <cucumber-cpp/internal/utils/Regex.hpp>
 #include <cucumber-cpp/internal/hook/HookRegistrar.hpp>
-#include <boost/make_shared.hpp>
 
 #include <algorithm>
 
@@ -15,7 +14,7 @@ bool RegexMatch::matches() {
     return regexMatched;
 }
 
-const RegexMatch::submatches_type & RegexMatch::getSubmatches() {
+const RegexMatch::submatches_type& RegexMatch::getSubmatches() {
     return submatches;
 }
 
@@ -23,8 +22,8 @@ std::string Regex::str() const {
     return regexImpl.str();
 }
 
-boost::shared_ptr<RegexMatch> Regex::find(const std::string &expression) const {
-    return boost::make_shared<FindRegexMatch>(regexImpl, expression);
+std::shared_ptr<RegexMatch> Regex::find(const std::string& expression) const {
+    return std::make_shared<FindRegexMatch>(regexImpl, expression);
 }
 
 namespace {
@@ -32,8 +31,9 @@ bool isUtf8CodeUnitStartOfCodepoint(unsigned int i) {
     return (i & 0xc0) != 0x80;
 }
 
-std::ptrdiff_t utf8CodepointOffset(const std::string& expression,
-                                   const std::string::const_iterator& it) {
+std::ptrdiff_t utf8CodepointOffset(
+    const std::string& expression, const std::string::const_iterator& it
+) {
     return count_if(expression.begin(), it, &isUtf8CodeUnitStartOfCodepoint);
 }
 } // namespace
@@ -41,7 +41,7 @@ std::ptrdiff_t utf8CodepointOffset(const std::string& expression,
 FindRegexMatch::FindRegexMatch(const boost::regex& regexImpl, const std::string& expression) {
     boost::smatch matchResults;
     regexMatched = boost::regex_search(
-                       expression, matchResults, regexImpl, boost::regex_constants::match_extra)
+        expression, matchResults, regexImpl, boost::regex_constants::match_extra)
                    && HookRegistrar::execStepMatchingHook(matchResults);
     if (regexMatched) {
         boost::smatch::const_iterator i = matchResults.begin();
@@ -59,8 +59,8 @@ FindRegexMatch::FindRegexMatch(const boost::regex& regexImpl, const std::string&
     }
 }
 
-boost::shared_ptr<RegexMatch> Regex::findAll(const std::string &expression) const {
-    return boost::make_shared<FindAllRegexMatch>(regexImpl, expression);
+std::shared_ptr<RegexMatch> Regex::findAll(const std::string& expression) const {
+    return std::make_shared<FindAllRegexMatch>(regexImpl, expression);
 }
 
 FindAllRegexMatch::FindAllRegexMatch(const boost::regex &regexImpl, const std::string &expression) {

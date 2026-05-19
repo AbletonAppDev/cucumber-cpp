@@ -5,7 +5,7 @@
 #include "ProtocolHandler.hpp"
 #include "../../CukeEngine.hpp"
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace cucumber {
 namespace internal {
@@ -18,16 +18,16 @@ class WireResponseVisitor;
 
 class CUCUMBER_CPP_EXPORT WireResponse {
 public:
-    WireResponse() {};
+    WireResponse(){};
 
     virtual void accept(WireResponseVisitor& visitor) const = 0;
 
-    virtual ~WireResponse() {};
+    virtual ~WireResponse() = default;
 };
 
 class CUCUMBER_CPP_EXPORT SuccessResponse : public WireResponse {
 public:
-    void accept(WireResponseVisitor& visitor) const;
+    void accept(WireResponseVisitor& visitor) const override;
 };
 
 class CUCUMBER_CPP_EXPORT FailureResponse : public WireResponse {
@@ -35,12 +35,12 @@ private:
     const std::string message, exceptionType;
 
 public:
-    FailureResponse(const std::string & message = "", const std::string & exceptionType = "");
+    FailureResponse(const std::string& message = "", const std::string& exceptionType = "");
 
     const std::string getMessage() const;
     const std::string getExceptionType() const;
 
-    void accept(WireResponseVisitor& visitor) const;
+    void accept(WireResponseVisitor& visitor) const override;
 };
 
 class CUCUMBER_CPP_EXPORT PendingResponse : public WireResponse {
@@ -48,11 +48,11 @@ private:
     const std::string message;
 
 public:
-    PendingResponse(const std::string & message);
+    PendingResponse(const std::string& message);
 
     const std::string getMessage() const;
 
-    void accept(WireResponseVisitor& visitor) const;
+    void accept(WireResponseVisitor& visitor) const override;
 };
 
 class CUCUMBER_CPP_EXPORT StepMatchesResponse : public WireResponse {
@@ -60,10 +60,10 @@ private:
     const std::vector<StepMatch> matchingSteps;
 
 public:
-    StepMatchesResponse(const std::vector<StepMatch> & matchingSteps);
+    StepMatchesResponse(const std::vector<StepMatch>& matchingSteps);
     const std::vector<StepMatch>& getMatchingSteps() const;
 
-    void accept(WireResponseVisitor& visitor) const;
+    void accept(WireResponseVisitor& visitor) const override;
 };
 
 class CUCUMBER_CPP_EXPORT SnippetTextResponse : public WireResponse {
@@ -71,11 +71,11 @@ private:
     const std::string stepSnippet;
 
 public:
-    SnippetTextResponse(const std::string & stepSnippet);
+    SnippetTextResponse(const std::string& stepSnippet);
 
     const std::string getStepSnippet() const;
 
-    void accept(WireResponseVisitor& visitor) const;
+    void accept(WireResponseVisitor& visitor) const override;
 };
 
 class CUCUMBER_CPP_EXPORT WireResponseVisitor {
@@ -86,9 +86,8 @@ public:
     virtual void visit(const StepMatchesResponse& response) = 0;
     virtual void visit(const SnippetTextResponse& response) = 0;
 
-    virtual ~WireResponseVisitor() {};
+    virtual ~WireResponseVisitor() = default;
 };
-
 
 /**
  * Wire protocol request command.
@@ -102,25 +101,24 @@ public:
      *
      * @return The command response (ownership passed to the caller)
      */
-    virtual boost::shared_ptr<WireResponse> run(CukeEngine& engine) const = 0;
+    virtual std::shared_ptr<WireResponse> run(CukeEngine& engine) const = 0;
 
-    virtual ~WireCommand() {};
+    virtual ~WireCommand() = default;
 };
 
 class CUCUMBER_CPP_EXPORT WireMessageCodecException : public std::exception {
 private:
-    const char *description;
+    const char* description;
 
 public:
-    WireMessageCodecException(const char *description) :
+    WireMessageCodecException(const char* description) :
         description(description) {
     }
 
-    const char* what() const throw() {
+    const char* what() const throw() override {
         return description;
     }
 };
-
 
 /**
  * Transforms wire messages into commands and responses to messages.
@@ -136,7 +134,7 @@ public:
      *
      * @throws WireMessageCodecException
      */
-    virtual boost::shared_ptr<WireCommand> decode(const std::string &request) const = 0;
+    virtual std::shared_ptr<WireCommand> decode(const std::string& request) const = 0;
 
     /**
      * Encodes a response to wire format.
@@ -147,17 +145,17 @@ public:
      */
     virtual const std::string encode(const WireResponse& response) const = 0;
 
-    virtual ~WireMessageCodec() {};
+    virtual ~WireMessageCodec() = default;
 };
 
 /**
- * WireMessageCodec implementation with JsonSpirit.
+ * WireMessageCodec implementation with Json.
  */
-class CUCUMBER_CPP_EXPORT JsonSpiritWireMessageCodec : public WireMessageCodec {
+class CUCUMBER_CPP_EXPORT JsonWireMessageCodec : public WireMessageCodec {
 public:
-    JsonSpiritWireMessageCodec();
-    boost::shared_ptr<WireCommand> decode(const std::string &request) const;
-    const std::string encode(const WireResponse& response) const;
+    JsonWireMessageCodec() = default;
+    std::shared_ptr<WireCommand> decode(const std::string& request) const override;
+    const std::string encode(const WireResponse& response) const override;
 };
 
 /**
@@ -172,7 +170,7 @@ private:
 public:
     WireProtocolHandler(const WireMessageCodec& codec, CukeEngine& engine);
 
-    std::string handle(const std::string &request) const;
+    std::string handle(const std::string& request) const override;
 };
 
 }
