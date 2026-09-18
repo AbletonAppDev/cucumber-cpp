@@ -1,6 +1,8 @@
 #include "cucumber-cpp/internal/CukeCommands.hpp"
 #include "cucumber-cpp/internal/hook/HookRegistrar.hpp"
 
+#include <algorithm>
+#include <iterator>
 #include <sstream>
 
 namespace cucumber {
