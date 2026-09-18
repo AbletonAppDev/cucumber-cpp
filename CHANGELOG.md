@@ -2,17 +2,6 @@ Please see [CONTRIBUTING.md](https://github.com/cucumber/cucumber/blob/main/CONT
 
 ## [0.9.0](https://github.com/cucumber/cucumber-cpp/compare/v0.8.0...v0.9.0) (18 September 2026)
 
-### Added
-
-* Zizmor analysis for GitHub Actions ([bd7ea86](https://github.com/cucumber/cucumber-cpp/commit/bd7ea869fe895a833672394ccae5651e3793332c) M.P. Korstanje)
-
-### Changed
-
-* Reduce GitHub Action permissions ([#316](https://github.com/cucumber/cucumber-cpp/pull/316) M.P. Korstanje)
-* Pin actions/checkout to an exact SHA reference ([d305fac](https://github.com/cucumber/cucumber-cpp/commit/d305fac5ab342c5d53632e8991610da7856a75c8) M.P. Korstanje)
-* Prefer .yaml over .yml for GitHub actions ([a5bcf8c](https://github.com/cucumber/cucumber-cpp/commit/a5bcf8cce8285040166ab2bf4ad4d4e695a25cbe) M.P. Korstanje)
-* Harmonize license file formatting ([fedcaea](https://github.com/cucumber/cucumber-cpp/commit/fedcaeab5382d42016345bd2ec56c4302aeffbd5) M.P. Korstanje)
-
 ### Fixed
 
 * Compile error with clang 23 ([#318](https://github.com/cucumber/cucumber-cpp/pull/318) Martin Altenburg)
