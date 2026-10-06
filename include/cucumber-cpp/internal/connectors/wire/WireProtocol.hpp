@@ -5,6 +5,7 @@
 #include "ProtocolHandler.hpp"
 #include "../../CukeEngine.hpp"
 
+#include <exception>
 #include <memory>
 
 namespace cucumber {

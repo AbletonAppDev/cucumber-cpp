@@ -1,5 +1,7 @@
 #include "cucumber-cpp/internal/step/StepManager.hpp"
 
+#include <exception>
+
 namespace cucumber {
 namespace internal {
 
